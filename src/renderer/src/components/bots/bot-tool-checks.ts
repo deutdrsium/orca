@@ -8,7 +8,7 @@ import { isBotAppTool } from '../../../../shared/bots/bot-connector-entries'
 import type { BotOwnTool, BotToolProblem, BotTools } from '../../../../shared/bot-tools'
 import { onBotsChanged } from '@/lib/bots-changed-window-event'
 import type { ExecutionHostId } from '../../../../shared/execution-host/execution-host'
-import { notifyToolReaders, subscribe, toolsRevision } from './bot-tools-revision'
+import { changed, notifyToolReaders, subscribe, toolsRevision } from './bot-tools-revision'
 
 type Problems = Record<string, BotToolProblem>
 
@@ -26,6 +26,8 @@ type BotToolReads = {
   agent: string | null
   tools: Promise<BotTools>
   checks: Partial<Record<CheckScope, Check>>
+  /** The host's `checkBasis` the checks ran with; undefined until the tools are read. */
+  basis?: string | null
 }
 // Shared by every row and card of a bot until the next change: a check starts its servers. Keyed by botRefKey.
 const reads = new Map<string, BotToolReads>()
@@ -47,6 +49,16 @@ function rereadToolLists(hostId: ExecutionHostId): void {
     read.tools = tools
     void tools.then(
       (next) => {
+        if (reads.get(key) !== read) {
+          return
+        }
+        // The check ran with other settings (Codex Arguments), so its result is old: check again.
+        if (read.basis !== undefined && (next.checkBasis ?? null) !== read.basis) {
+          reads.delete(key)
+          stopUnfinishedChecks(read)
+          changed()
+          return
+        }
         for (const reader of listReaders.get(key) ?? []) {
           reader(next)
         }
@@ -101,6 +113,12 @@ function readsFor(bot: BotRef, agent: string | null): BotToolReads {
     tools: callBotRpc<BotTools>(ref, 'bots.tools.list', { botId: bot.id }),
     checks: {}
   }
+  void fresh.tools.then(
+    (tools) => {
+      fresh.basis ??= tools.checkBasis ?? null
+    },
+    () => {}
+  )
   reads.set(key, fresh)
   return fresh
 }
@@ -179,9 +197,6 @@ const LOADING: BotToolsView = { status: 'loading' }
  */
 export type BotToolsCheck = 'check' | 'apps' | 'finished' | 'none'
 
-/** An app whose state its agent's CLI reports; one Orca signs in to has its own, and isn't checked. */
-const checkedApp = (tool: BotOwnTool): boolean => isBotAppTool(tool) && tool.remote
-
 // A tool Orca signs in to isn't checked: its state is Orca's own, so it is never unconfirmed.
 const unconfirmed = (tools: readonly BotOwnTool[], detail?: string): Problems =>
   Object.fromEntries(
@@ -227,7 +242,8 @@ export function useBotTools(
         const scope: CheckScope | null =
           check === 'check' && own.length > 0
             ? 'all'
-            : check === 'apps' && own.some(checkedApp)
+            : // An app Orca signs in to is checked too: its name can be taken in the agent's config.
+              check === 'apps' && own.some(isBotAppTool)
               ? 'remote'
               : null
         if (!scope) {

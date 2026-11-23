@@ -53,6 +53,7 @@ import type { OrcaRuntimeService } from '../../orca-runtime'
 import { appendOrcaChatCard } from '../../orca-chat-card'
 import { defineMethod, InvalidArgumentError } from '../core'
 import { refuseFromLook, targetBot } from './bots-tools-target'
+import { codexChatAppServerArgs } from '../../../bots/bot-tools-codex-args'
 
 const botToolSignInFolder = (botId: string): string =>
   join(getProfileUserDataPath(), 'bot-tool-sign-in', botId)
@@ -89,7 +90,10 @@ export async function botToolsHome(runtime: OrcaRuntimeService, bot: Bot): Promi
       command,
       prefixArgs: [...prefixArgs],
       env: cliEnv,
-      accountHome: agent === 'claude' ? cliEnv.CLAUDE_CONFIG_DIR?.trim() || null : home
+      accountHome: agent === 'claude' ? cliEnv.CLAUDE_CONFIG_DIR?.trim() || null : home,
+      ...(agent === 'codex'
+        ? { appServerArgs: codexChatAppServerArgs(sources.commandSettings) }
+        : {})
     }
   } finally {
     release.abort()

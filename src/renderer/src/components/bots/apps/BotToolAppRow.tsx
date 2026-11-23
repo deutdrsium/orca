@@ -14,11 +14,13 @@ import { retryBotToolCheck } from '../bot-tools-revision'
 import { BotConnectorDetails, BotConnectorRowFrame, type BotConnectorFix } from '../BotConnectorRow'
 import type { BotConnectorTitle } from '../bot-connector-titles'
 import { BotToolFinishSignIn } from '../BotToolFinishSignIn'
+import { AddBotToolDialog } from '../AddBotToolDialog'
 import { BotAppBrandLogo } from './BotAppBrandLogo'
 import { BotAppLogo } from './BotAppRow'
 import type { BotToolApp } from './bot-tool-apps'
 import { botAppLogoSource } from './bot-app-logo-source'
 import { botMcpAppLine } from '../../../../../shared/bots/bot-app-lines'
+import { botToolAppCheckFace } from './bot-tool-app-check-face'
 
 /** A tool's or app's tile: its brand or Composio logo when one is known, else the generic tool icon. */
 export function BotToolLogo({
@@ -64,6 +66,7 @@ export function BotToolAppRow({
   const confirm = useConfirmationDialog()
   const { tool, app, problem } = entry
   const [busy, setBusy] = useState(false)
+  const [editing, setEditing] = useState(false)
   const name = app?.name ?? botToolTitle(tool.name)
   const line = app ? botMcpAppLine(app, t) : botToolSubtitle(tool)
   const run = (action: () => Promise<unknown>): void => {
@@ -95,27 +98,39 @@ export function BotToolAppRow({
   const owned = tool.signIn
   const signInAction = useBotToolSignInAction(bot, tool, problem)
   const { started } = signInAction
-  const face: { line: string; fix: BotConnectorFix | null } = signInAction.line
-    ? {
-        line: signInAction.line,
-        fix: signInAction.action && {
-          label: signInAction.action.label,
-          onClick: signInAction.action.run,
-          disabled: busy || signInAction.action.busy,
-          opensRow: true
+  const found = botToolAppCheckFace(problem, started)
+  // The same Edit as Settings › Tools: the name to change is the bot's tool's.
+  const rename: BotConnectorFix = {
+    label: t('settings.bots.edit', 'Edit'),
+    onClick: () => setEditing(true),
+    disabled: busy
+  }
+  const checkFace: { line: string; fix: BotConnectorFix } | null =
+    found === 'nameTaken' || found === 'wontStart'
+      ? {
+          line: t('bots.toolApp.wontStart', 'Won’t start'),
+          fix: found === 'nameTaken' ? rename : checkAgain
         }
-      }
-    : problem?.kind === 'failed'
-      ? { line: t('bots.toolApp.wontStart', 'Won’t start'), fix: checkAgain }
-      : problem?.kind === 'unconfirmed' && problem.detail
+      : found === 'unconfirmed'
         ? { line: t('bots.toolApp.unconfirmed', 'Not confirmed'), fix: checkAgain }
-        : {
-            line:
-              !problem && app?.signIn === 'browser'
-                ? t('bots.toolApp.signedIn', 'Signed in')
-                : line,
-            fix: null
+        : null
+  const face: { line: string; fix: BotConnectorFix | null } = checkFace
+    ? checkFace
+    : signInAction.line
+      ? {
+          line: signInAction.line,
+          fix: signInAction.action && {
+            label: signInAction.action.label,
+            onClick: signInAction.action.run,
+            disabled: busy || signInAction.action.busy,
+            opensRow: true
           }
+        }
+      : {
+          line:
+            !problem && app?.signIn === 'browser' ? t('bots.toolApp.signedIn', 'Signed in') : line,
+          fix: null
+        }
   return (
     <BotConnectorRowFrame
       icon={null}
@@ -174,7 +189,8 @@ export function BotToolAppRow({
         ]}
       />
       {signInAction.pasteBack ? <BotToolFinishSignIn bot={bot} name={tool.name} openAgain /> : null}
-      {!owned && problem?.detail ? (
+      <AddBotToolDialog bot={bot} name={tool.name} open={editing} onOpenChange={setEditing} />
+      {(!owned || checkFace) && problem?.detail ? (
         <p className="mt-2 font-mono text-xs leading-5 text-muted-foreground">{problem.detail}</p>
       ) : null}
     </BotConnectorRowFrame>
