@@ -6,7 +6,6 @@ import { agentSessionAccountHomePath } from '../../../../../../shared/agent-sess
 import { defineMethod } from '../../../core'
 import { withOrcaMcpSource } from '../../../../../mcp-servers/session-host-mcp-delivery'
 import { withKnownSessionMcpServers } from '../../../../../mcp-servers/session-mcp-at-rest'
-import { isMcpServersFeatureEnabled } from '../../../../../mcp-servers/mcp-servers-feature'
 import { agentSessionPinnedLaunchDirectory } from '../../../../agent-session/records/agent-session-record-launch-directory'
 import { requireInstalledStructuredHost } from '../creation/structured-agent-session-gate'
 import { AgentSessionMcpParams } from '../../../../../../shared/rpc-contract/structured-agent-session/structured-agent-session-mcp-params'
@@ -21,12 +20,9 @@ export const STRUCTURED_AGENT_SESSION_MCP_METHODS = [
       const host = await requireInstalledStructuredHost(ctx, sessionId)
       const saved = host.deps.store.getRecord(sessionId)
       const manage = saved && host.deps.agents.registration(saved.provider)?.adapter.manageMcp
-      // With MCP servers on, Orca lists what it knows of a chat's servers where its agent can't; a
-      // bot's chat gets its own tools too, which only its launch reads.
-      const knows =
-        isMcpServersFeatureEnabled() &&
-        saved != null &&
-        host.deps.isBotHome?.(saved.location.workspaceId) !== true
+      // Orca lists what it knows of a chat's servers where its agent can't; a bot's chat gets its
+      // own tools too, which only its launch reads.
+      const knows = saved != null && host.deps.isBotHome?.(saved.location.workspaceId) !== true
       if (!saved || (!manage && !knows)) {
         return { status: 'unsupported' }
       }
