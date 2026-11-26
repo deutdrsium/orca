@@ -40,6 +40,7 @@ type ContinuationScope = Pick<
   | 'showToast'
   | 'hostCapabilities'
   | 'handleCloseSessionTab'
+  | 'sessionTabsRef'
 >
 
 const PROBE_TIMEOUT_MS = 5_000
@@ -65,7 +66,10 @@ export async function continueMobileTerminalInChat(
   const lock = `mobile-continue:${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
   scope.creatingTerminalRef.current = lock
   scope.setCreating(true)
+  // Armed before anything awaits, so a tab the user picks meanwhile supersedes the chat.
+  scope.pendingSelectionRef.current = launchedSelection(lock, {}, null)
   let closed = false
+  let fresh = false
   try {
     const inspect = async (terminal: string): Promise<TerminalProcessInspection> => {
       const reply = await terminalProcessInspect.request(
@@ -105,12 +109,17 @@ export async function continueMobileTerminalInChat(
     if (!agent) {
       return
     }
-    // Armed before anything closes, so a later tab pick by the user supersedes this one.
-    scope.pendingSelectionRef.current = launchedSelection(lock, {}, null)
     if (closes) {
-      // The preflight took a round trip, so the pane may now run something else; only its agent is
-      // the user's to stop.
-      if ((await probeClose()).close !== 'close') {
+      // The preflight took a round trip, so the pane may now run something else, or its agent
+      // another conversation; only this conversation's agent is the user's to stop.
+      const recheck = await probeClose()
+      const live = scope.sessionTabsRef.current.find((tab) => tab.id === source.tab.id)
+      if (
+        recheck.close !== 'close' ||
+        live?.type !== 'terminal' ||
+        live.terminal !== source.terminal ||
+        live.agentStatus?.providerSession?.id !== source.providerSessionId
+      ) {
         report(copy.terminalChanged())
         return
       }
@@ -156,6 +165,7 @@ export async function continueMobileTerminalInChat(
       result.refusal?.code === 'agent_session_identity_required' &&
       result.refusal.details?.reason === 'transcriptNotFound'
     ) {
+      fresh = true
       result = await resumeMobileStructuredAgentSession(
         client,
         scope.worktreeId,
@@ -172,7 +182,8 @@ export async function continueMobileTerminalInChat(
     } else if (result.kind === 'unknown') {
       report(copy.unconfirmed())
     } else {
-      report(copy.failed(refusalWords(result.refusal, result.message), closed))
+      // Agent History holds the conversation only when the terminal had saved one.
+      report(copy.failed(refusalWords(result.refusal, result.message), closed && !fresh))
     }
   } catch {
     report(closed ? copy.unconfirmed() : copy.failed(copy.tryAgain(), false))
