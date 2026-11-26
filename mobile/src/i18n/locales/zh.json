@@ -3881,7 +3881,7 @@
       "busy": "另一个聊天或终端正在打开。请稍候再试。",
       "continueInChat": "在聊天中继续",
       "failed": "无法在聊天中继续。{{detail}}",
-      "failedAfterClose": "无法在聊天中继续。{{detail}} 对话在代理历史记录中。",
+      "failedAfterClose": "无法在聊天中继续。{{detail}} 对话在智能体历史记录中。",
       "otherJob": "此终端中正在运行 {{process}}。请先退出它，然后在聊天中继续。",
       "tryAgain": "请重试。",
       "unavailable": "此电脑上无法使用 {{agent}} 聊天。",

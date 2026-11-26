@@ -3759,7 +3759,7 @@
       "busy": "Outro chat ou terminal está sendo aberto. Aguarde e tente novamente.",
       "continueInChat": "Continuar no chat",
       "failed": "Não foi possível continuar no chat. {{detail}}",
-      "failedAfterClose": "Não foi possível continuar no chat. {{detail}} A conversa está no histórico de agentes.",
+      "failedAfterClose": "Não foi possível continuar no chat. {{detail}} A conversa está no Histórico de Agentes.",
       "otherJob": "{{process}} está em execução neste terminal. Encerre-o e continue no chat.",
       "tryAgain": "Tente novamente.",
       "unavailable": "Os chats do {{agent}} não estão disponíveis neste computador.",
