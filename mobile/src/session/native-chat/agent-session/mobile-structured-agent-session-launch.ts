@@ -197,19 +197,20 @@ export function preflightMobileStructuredAgentResume(
   return createSupportRefusal(client, `id:${worktreeId}`, agent, resumeFrom)
 }
 
-/** A chat that takes over a terminal's conversation; the host derives every path from its identity. */
+/** A chat that takes over a terminal's conversation (the host derives every path from its
+ *  identity), or a fresh chat when `resumeFrom` is absent. */
 export function resumeMobileStructuredAgentSession(
   client: RpcClient,
   worktreeId: string,
   agent: TuiAgent,
-  resumeFrom: StructuredAgentSessionResumeSource,
+  resumeFrom: StructuredAgentSessionResumeSource | undefined,
   tabPlacement?: StructuredAgentSessionCreateParams['tabPlacement']
 ): Promise<MobileStructuredAgentCreateResult> {
   return requestStructuredAgentSessionCreate(
     client,
     `id:${worktreeId}`,
     agent,
-    { resumeFrom },
+    resumeFrom ? { resumeFrom } : {},
     tabPlacement
   )
 }

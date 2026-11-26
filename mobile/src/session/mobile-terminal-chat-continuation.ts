@@ -131,7 +131,12 @@ export async function continueMobileTerminalInChat(
     const useCliSource =
       !closes &&
       scope.hostCapabilities?.includes(STRUCTURED_AGENT_SESSION_CLI_SOURCE_RUNTIME_CAPABILITY)
-    const result = await resumeMobileStructuredAgentSession(
+    const tabPlacement =
+      source.tab.parentTabId &&
+      scope.hostCapabilities?.includes(AGENT_SESSION_CREATE_TAB_PLACEMENT_RUNTIME_CAPABILITY)
+        ? { afterTabId: source.tab.parentTabId }
+        : undefined
+    let result = await resumeMobileStructuredAgentSession(
       client,
       scope.worktreeId,
       agent,
@@ -141,11 +146,24 @@ export async function continueMobileTerminalInChat(
           ? { cliSource: { workspaceId: scope.worktreeId, paneKey: source.paneKey } }
           : {})
       },
-      source.tab.parentTabId &&
-        scope.hostCapabilities?.includes(AGENT_SESSION_CREATE_TAB_PLACEMENT_RUNTIME_CAPABILITY)
-        ? { afterTabId: source.tab.parentTabId }
-        : undefined
+      tabPlacement
     )
+    // A conversation the terminal never saved has nothing to take over; as on desktop, the chat
+    // starts fresh rather than leaving the user with neither.
+    if (
+      closed &&
+      result.kind === 'failed' &&
+      result.refusal?.code === 'agent_session_identity_required' &&
+      result.refusal.details?.reason === 'transcriptNotFound'
+    ) {
+      result = await resumeMobileStructuredAgentSession(
+        client,
+        scope.worktreeId,
+        agent,
+        undefined,
+        tabPlacement
+      )
+    }
     if (result.kind === 'created') {
       scope.pendingSelectionRef.current = withLaunchReply(scope.pendingSelectionRef.current, lock, {
         sessionId: result.sessionId
