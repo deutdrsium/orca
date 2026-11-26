@@ -256,6 +256,10 @@ export function useBotAvatarIntakeHost(
       document.removeEventListener('dragend', leave, true)
       document.removeEventListener('drop', leave, true)
       host.removeAttribute(BOT_PICTURE_DROP_ATTRIBUTE)
+      // Turned off mid-drag: the drag's end won't reach this host, so its drop feedback ends here.
+      if (depth > 0) {
+        setDragging(false)
+      }
     }
   }, [rootRef, enabled])
   return outlinePicker

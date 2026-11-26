@@ -49,7 +49,7 @@ export function NewBotPictureButton({
   const rootRef = useRef<HTMLDivElement>(null)
   useBotAvatarIntakeHost(rootRef, intake, !readOnly)
   const { line } = intake
-  const showReading = submitted && intake.reading
+  const showReading = submitted && intake.reading && !readOnly
   const [open, setOpen] = useState(false)
   // Create closes the popover for good, so one that fails doesn't bring it back.
   if (disabled && open) {
@@ -155,7 +155,7 @@ export function NewBotPictureButton({
       <div className="min-w-0 flex-1">
         {children}
         <div aria-live="polite" className="text-xs">
-          {line.kind === 'error' ? (
+          {line.kind === 'error' && !readOnly ? (
             <span role="alert" className="mt-1 inline-flex items-center gap-1.5 text-destructive">
               <CircleAlert className="size-3.5 shrink-0" />
               {errorMessage(line.error)}
