@@ -62,7 +62,7 @@ const AGAIN: BotImportSource[] = [
 ]
 
 // The dialog is fixed, so it portals into a transformed box that wide instead of the page's viewport.
-function Stage({ width, height = 420 }: { width: number; height?: number }): React.JSX.Element {
+function Stage({ width, height = 480 }: { width: number; height?: number }): React.JSX.Element {
   const [box, setBox] = useState<HTMLElement | null>(null)
   return (
     <div
@@ -131,17 +131,6 @@ export const severalOpen = defineFixture({
   }
 })
 export const longNames = defineFixture(fixture(300, LONG, LONG_FIXTURE_COMPUTER))
-export const runsOnOpen = defineFixture({
-  ...fixture(420, ONE, undefined, 640),
-  interact: async () => {
-    const link = await waitFor(
-      () => document.querySelector<HTMLElement>('[data-slot="dialog-footer-start"] button'),
-      'the runtime link'
-    )
-    link.click()
-    await waitFor(() => document.querySelector('[data-slot="popover-content"]'), 'the runtime card')
-  }
-})
 export const noneFound = defineFixture(fixture(420, [], undefined, 560))
 export const pictureOpen = defineFixture({
   ...fixture(420, ONE, undefined, 640),

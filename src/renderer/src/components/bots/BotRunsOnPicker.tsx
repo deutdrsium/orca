@@ -1,12 +1,9 @@
-// Where a new bot runs: Computer and Agent side by side in New bot, or a quiet "<host> · <agent>" link in
-// Import from another app that opens them in a popover.
+// Where a new bot runs: Computer and Agent side by side, in New bot and Import from another app.
 import React, { useEffect, useId, useRef } from 'react'
 import { Label } from '@/components/ui/label'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
-import { type BotAgent, botFolderName, newBotName } from '../../../../shared/bot-types'
-import { useHostBots } from '@/lib/bot-catalog'
+import type { BotAgent } from '../../../../shared/bot-types'
 import type { NewTabAgentMenuModel } from '../agent/launch-menu/new-tab-agent-menu-model'
 import { COMBOBOX_FIELD_SHELL } from '../new-workspace/type-ahead/type-ahead-combobox-styles'
 import {
@@ -21,7 +18,6 @@ import {
   type BotCreateHostChoice
 } from './bot-create-hosts'
 import { BotComputerPicker } from './BotComputerPicker'
-import { botAgentLabel, botFolderDisplay } from './bot-presentation'
 import type { BotPermissionIntent } from './use-bot-agent-setup'
 import { useWslHostDistro } from '@/components/wsl-host-mark/WslHostMark'
 import { BotWslSetupCard } from './BotWslSetupCard'
@@ -40,27 +36,6 @@ function computerErrorLabel(blocked: BotCreateHostBlock, updatable: boolean, t: 
   }
 }
 
-/** Where a new bot's home goes, named as the runtime names it among `bots` on that computer. */
-export function botFolderPreview(
-  name: string,
-  bots: readonly { name: string }[],
-  windows?: boolean
-): string {
-  return botFolderDisplay(botFolderName(newBotName(name, bots)), windows)
-}
-
-function BotFolderPreview({ name, host }: { name: string; host: BotCreateHostChoice['host'] }) {
-  const t = useTranslate()
-  const bots = useHostBots(host.hostId)
-  return (
-    <p className="text-2xs text-muted-foreground">
-      {t('bots.new.folder', 'Folder: {{path}}', {
-        path: botFolderPreview(name, bots, host.windows)
-      })}
-    </p>
-  )
-}
-
 export function BotRunsOnPicker({
   hostChoice,
   setup,
@@ -69,9 +44,7 @@ export function BotRunsOnPicker({
   onSetupChange,
   keptPermission,
   onAddHost,
-  name,
   showSubmitFeedback = false,
-  variant = 'link',
   chatDefault
 }: {
   /** The computer it runs on (`useBotCreateHost`). */
@@ -86,11 +59,7 @@ export function BotRunsOnPicker({
   /** A bot from a link: the owner's permission, kept apart from the agent (`useBotAgentSetup`). */
   keptPermission?: BotPermissionIntent
   onAddHost?: (mode: 'ssh' | 'server') => void
-  /** The bot's name, for its folder. */
-  name?: string
   showSubmitFeedback?: boolean
-  /** `link` is a quiet "<host> · <agent>" link that opens the fields; `fields` shows them side by side. */
-  variant?: 'link' | 'fields'
   /** Chat default as the Agent menu's first choice (`useBotAgentSetup`). */
   chatDefault?: BotAgentChatDefault
 }): React.JSX.Element {
@@ -103,7 +72,6 @@ export function BotRunsOnPicker({
   const computerError =
     showSubmitFeedback && host.blocked ? computerErrorLabel(host.blocked, canUpdate, t) : null
   const chosen = setup.agent
-  const fields = variant === 'fields'
   const computerHint =
     computerError ??
     botCreateHostBlockedHint(host, canUpdate, t) ??
@@ -111,9 +79,7 @@ export function BotRunsOnPicker({
       ? t('bots.new.computerAccountHint', 'Where the bot runs, signed in to Orca as {{account}}.', {
           account: otherAccount
         })
-      : fields
-        ? null
-        : t('bots.new.computerHint', 'Where the bot runs.'))
+      : null)
   const noAgents = model.state === 'settled' && choices.length === 0
   const computerRef = useRef<HTMLDivElement>(null)
   const wslSetup = hostChoice.wslSetup
@@ -132,16 +98,14 @@ export function BotRunsOnPicker({
   }, [addedHostReady, finish])
   // A sleeping, waking or unreachable host's agents are unknown, not missing.
   const hostWaking = Boolean(host.sleeping || host.waking)
-  const wslNoAgent =
-    fields && noAgents && !settingUp && !hostWaking && !host.blocked && wslDistro !== null
+  const wslNoAgent = noAgents && !settingUp && !hostWaking && !host.blocked && wslDistro !== null
   const agentInvalid = showSubmitFeedback && !host.blocked && noAgents && !settingUp
   const findingAgents = showSubmitFeedback && !host.blocked && model.state === 'loading'
   const agentLabel = t('bots.new.agent', 'Agent')
-  const labelVariant = fields ? 'settings' : undefined
   const controls = (
     <>
       <div className="min-w-0 space-y-1">
-        <Label variant={labelVariant}>{t('bots.new.computer', 'Computer')}</Label>
+        <Label variant="settings">{t('bots.new.computer', 'Computer')}</Label>
         <div ref={computerRef}>
           <BotComputerPicker
             hostChoice={hostChoice}
@@ -160,20 +124,16 @@ export function BotRunsOnPicker({
         ) : null}
       </div>
       <div className="min-w-0 space-y-1">
-        <Label variant={labelVariant}>{agentLabel}</Label>
+        <Label variant="settings">{agentLabel}</Label>
         <div
-          role={fields ? 'group' : undefined}
-          tabIndex={fields ? -1 : undefined}
-          aria-label={fields ? agentLabel : undefined}
+          role="group"
+          tabIndex={-1}
+          aria-label={agentLabel}
           aria-invalid={agentInvalid || undefined}
           aria-describedby={agentInvalid ? agentErrorId : undefined}
-          className={
-            fields
-              ? 'group/agent rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:aria-invalid:ring-destructive/20 dark:focus-visible:aria-invalid:ring-destructive/40'
-              : undefined
-          }
+          className="group/agent rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:aria-invalid:ring-destructive/20 dark:focus-visible:aria-invalid:ring-destructive/40"
         >
-          {fields && (settingUp || noAgents || (hostWaking && wslDistro)) ? (
+          {settingUp || noAgents || (hostWaking && wslDistro) ? (
             <div
               className={cn(
                 COMBOBOX_FIELD_SHELL,
@@ -194,10 +154,6 @@ export function BotRunsOnPicker({
                       : t('bots.new.validation.noAgents', 'No agents')}
               </span>
             </div>
-          ) : noAgents ? (
-            <p className="text-2xs text-muted-foreground">
-              {t('bots.new.noChatAgents', 'No chat agents available on this computer.')}
-            </p>
           ) : (
             <BotAgentLaunchPicker
               key={host.hostId}
@@ -206,7 +162,7 @@ export function BotRunsOnPicker({
               value={setup}
               onChange={onSetupChange}
               keptPermission={keptPermission}
-              showChatDefaultHint={!fields}
+              showChatDefaultHint={false}
               chatDefault={chatDefault}
             />
           )}
@@ -222,59 +178,24 @@ export function BotRunsOnPicker({
           </p>
         ) : null}
       </div>
-      {name !== undefined ? <BotFolderPreview name={name} host={host} /> : null}
     </>
   )
-  if (fields) {
-    return (
-      <div className="space-y-2">
-        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">{controls}</div>
-        <BotWslSetupCard
-          state={setupState}
-          onCancel={wslSetup.cancel}
-          onRetry={wslSetup.retry}
-          onChooseAnother={() => {
-            wslSetup.cancel()
-            // Opens the Computer list, as a click on the field does.
-            computerRef.current?.querySelector<HTMLElement>('[role="combobox"]')?.click()
-          }}
-        />
-        {wslNoAgent && wslDistro && host.environmentId ? (
-          <BotWslNoAgentHint distro={wslDistro} environmentId={host.environmentId} />
-        ) : null}
-      </div>
-    )
-  }
-  // Full label on hover, since a long host truncates it.
-  const runsOnLabel = t('bots.new.runsOnLink', '{{host}} · {{agent}}', {
-    host: host.label,
-    agent: noAgents ? agentLabel : botAgentLabel(chosen)
-  })
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          title={runsOnLabel}
-          className="min-w-0 truncate rounded-sm text-left text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-expanded:text-foreground"
-        >
-          {runsOnLabel}
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        collisionPadding={8}
-        // Focus the card, not the Computer field, whose list would open on focus.
-        onOpenAutoFocus={(event) => {
-          event.preventDefault()
-          if (event.currentTarget instanceof HTMLElement) {
-            event.currentTarget.focus()
-          }
+    <div className="space-y-2">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">{controls}</div>
+      <BotWslSetupCard
+        state={setupState}
+        onCancel={wslSetup.cancel}
+        onRetry={wslSetup.retry}
+        onChooseAnother={() => {
+          wslSetup.cancel()
+          // Opens the Computer list, as a click on the field does.
+          computerRef.current?.querySelector<HTMLElement>('[role="combobox"]')?.click()
         }}
-        className="w-[min(20rem,var(--radix-popover-content-available-width))]"
-      >
-        <div className="space-y-3 p-3">{controls}</div>
-      </PopoverContent>
-    </Popover>
+      />
+      {wslNoAgent && wslDistro && host.environmentId ? (
+        <BotWslNoAgentHint distro={wslDistro} environmentId={host.environmentId} />
+      ) : null}
+    </div>
   )
 }

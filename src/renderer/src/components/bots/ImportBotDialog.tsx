@@ -257,6 +257,18 @@ export function ImportBotDialog({
             </BotNameSuggestion>
           ) : null}
         </NewBotPictureButton>
+        {/* New bot's own Computer and Agent fields, so both dialogs pick where a bot runs the same way. */}
+        {again ? null : (
+          <BotRunsOnPicker
+            hostChoice={hostChoice}
+            setup={agentSetup.setup}
+            model={menu.model}
+            choices={choices}
+            onSetupChange={agentSetup.setSetup}
+            keptPermission={agentSetup.intent}
+            chatDefault={agentSetup.chatDefault}
+          />
+        )}
         {picks.length > 0 ? (
           <button
             type="button"
@@ -286,22 +298,7 @@ export function ImportBotDialog({
             {notOnServer ? <p className="text-xs text-muted-foreground">{notOnServer}</p> : null}
           </div>
         ) : null}
-        {/* One row: a long host or agent truncates the link instead of pushing the buttons down. */}
-        <DialogFooter
-          className="flex-nowrap [&>[data-slot=dialog-footer-actions]]:shrink-0"
-          start={
-            again ? null : (
-              <BotRunsOnPicker
-                hostChoice={hostChoice}
-                setup={agentSetup.setup}
-                model={menu.model}
-                choices={choices}
-                onSetupChange={agentSetup.setSetup}
-                name={name}
-              />
-            )
-          }
-        >
+        <DialogFooter>
           <Button type="button" variant="ghost" size="sm" disabled={creating} onClick={close}>
             {t('bots.new.cancel', 'Cancel')}
           </Button>
