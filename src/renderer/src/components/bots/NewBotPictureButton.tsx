@@ -24,6 +24,7 @@ export function NewBotPictureButton({
   submitted,
   generate,
   disabled = false,
+  pencil = 'always',
   children
 }: {
   picture: NewBotPicture
@@ -34,6 +35,8 @@ export function NewBotPictureButton({
   generate?: GenerateFace
   /** While Create runs: the picture it took stays as it is. */
   disabled?: boolean
+  /** `hover`: the pencil shows on hover, focus or while open, for a dialog where the picture is secondary. */
+  pencil?: 'always' | 'hover'
   /** The name field, on the picture's row and centred on it. */
   children: React.ReactNode
 }): React.JSX.Element {
@@ -101,7 +104,10 @@ export function NewBotPictureButton({
               className={cn(
                 'absolute -right-1.5 -bottom-1.5 flex size-[22px] items-center justify-center rounded-full border border-border bg-popover text-muted-foreground shadow-[0_0_0_2px_var(--dialog-surface)] transition-colors group-hover/picture:text-foreground group-aria-expanded/picture:text-foreground',
                 // The spinner reads at full contrast, as the pencil does on hover.
-                running && 'text-foreground'
+                running && 'text-foreground',
+                pencil === 'hover' &&
+                  !running &&
+                  'opacity-0 transition-[color,opacity] group-hover/picture:opacity-100 group-focus-visible/picture:opacity-100 group-aria-expanded/picture:opacity-100'
               )}
             >
               {/* A picture still being made, picker open or closed; it lands on its own. */}
