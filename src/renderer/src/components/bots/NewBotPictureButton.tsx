@@ -47,7 +47,7 @@ export function NewBotPictureButton({
   const readingId = useId()
   const errorMessage = useIntakeErrorMessage()
   const rootRef = useRef<HTMLDivElement>(null)
-  useBotAvatarIntakeHost(rootRef, intake)
+  useBotAvatarIntakeHost(rootRef, intake, !readOnly)
   const { line } = intake
   const showReading = submitted && intake.reading
   const [open, setOpen] = useState(false)

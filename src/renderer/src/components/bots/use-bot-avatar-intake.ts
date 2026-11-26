@@ -169,7 +169,9 @@ export function useBotAvatarIntakeState({
  *  the picker draws the drop outline itself (in a dialog) or the popover does. */
 export function useBotAvatarIntakeHost(
   rootRef: React.RefObject<HTMLElement | null>,
-  intake: BotAvatarIntake
+  intake: BotAvatarIntake,
+  /** Off while there is no picture to change, so a paste or drop isn't taken into a hidden draft. */
+  enabled = true
 ): boolean {
   const [outlinePicker, setOutlinePicker] = useState(true)
   const takeFromHost = useEffectEvent(intake.take)
@@ -177,7 +179,7 @@ export function useBotAvatarIntakeHost(
   useEffect(() => {
     const root = rootRef.current
     const host = root?.closest<HTMLElement>('[role="dialog"]') ?? root
-    if (!root || !host) {
+    if (!enabled || !root || !host) {
       return
     }
     // In a popover the popover itself is the outline; in a dialog the picker is.
@@ -255,7 +257,7 @@ export function useBotAvatarIntakeHost(
       document.removeEventListener('drop', leave, true)
       host.removeAttribute(BOT_PICTURE_DROP_ATTRIBUTE)
     }
-  }, [rootRef])
+  }, [rootRef, enabled])
   return outlinePicker
 }
 
