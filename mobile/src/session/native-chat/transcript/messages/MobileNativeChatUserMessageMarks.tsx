@@ -16,7 +16,6 @@ import { useMobileTranslation } from '../../../../i18n/use-mobile-translation'
 import { openExternalLink } from '../../../../platform/external-links/external-link'
 import { colors, pressedStyle, radii, spacing, typography } from '../../../../theme/mobile-theme'
 import { themedStyleSheet } from '../../../../theme/themed-styles'
-import { MobileNativeChatAutomationResultsCarried } from '../MobileNativeChatBotRowNotes'
 import { useMobileColorScheme } from '../../../../theme/use-mobile-color-scheme'
 import { MobileSlackMirrorPostLine } from '../../slack-mirror/MobileSlackMirrorPost'
 import { useMobileSlackMirrorContext } from '../../slack-mirror/use-mobile-slack-mirror'
@@ -183,8 +182,7 @@ export function MobileNativeChatConnectorMarks({
   )
 }
 
-/** Under the person's bubble, as on desktop: its Slack post's line, "Sent as goal", then the
- *  automation results it carried. */
+/** Under the person's bubble, as on desktop: its Slack post's line, then "Sent as goal". */
 export function MobileNativeChatUserMessageNotes({
   message
 }: {
@@ -194,9 +192,6 @@ export function MobileNativeChatUserMessageNotes({
     <>
       <MobileSlackMirrorPostLine messageId={message.id} />
       {message.sentAs === 'goal' ? <MobileNativeChatSentAsGoal /> : null}
-      {message.automationResultsCarried ? (
-        <MobileNativeChatAutomationResultsCarried count={message.automationResultsCarried} />
-      ) : null}
     </>
   )
 }
