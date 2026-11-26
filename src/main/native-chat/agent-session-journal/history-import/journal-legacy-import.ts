@@ -14,6 +14,7 @@ import { readLegacyImportTranscript, TRANSCRIPT_DECODERS } from './journal-legac
 import { readOpenCodeNativeChatTranscriptFull } from '../../transcript-history/opencode/transcript-opencode'
 import { prepareHermesImport } from './journal-hermes-import'
 import { prepareAntigravityImport } from './journal-antigravity-import'
+import { prepareDroidImport } from './journal-droid-import'
 import { replacementItem, replacementItems } from './journal-replacement-items'
 import { mayBeClaudeConversationRecord } from '../../transcript-decoding/transcript-line-decoders-claude'
 import { createLegacyIdentityTracker } from './journal-legacy-identity'
@@ -104,6 +105,12 @@ export async function prepareLegacyTranscriptImport(input: {
       limits,
       MAX_LEGACY_IMPORT_RETAINED_BYTES
     )
+  }
+  if (input.agent === 'droid') {
+    return prepareDroidImport(input.sessionId, options, limits, {
+      retained: MAX_LEGACY_IMPORT_RETAINED_BYTES,
+      maxSource: MAX_LEGACY_IMPORT_RECORD_BYTES
+    })
   }
   const transcriptAgent =
     input.agent === 'pi' ? 'omp' : resolveNativeChatTranscriptAgent(input.agent)
