@@ -34,7 +34,7 @@ import { MobileNativeChatBotIdentityContext } from '../mobile-native-chat-bot-id
 import { useMobileBotCardHost } from './bot-cards/mobile-bot-card-host'
 import { MobileNativeChatNoticePill } from './notices/MobileNativeChatNoticePill'
 import { botRunSendAgain } from '../../../bots/bot-sheet-operations'
-import { mobileBotRefusalText } from '../../../bots/mobile-bot-refusal-text'
+import { mobileAgentSessionRefusalText } from '../agent-session/mobile-agent-session-refusal-text'
 import { useBotPanelOpener } from '../../../bots/bot-item-open'
 import { triggerError } from '../../../platform/haptics/haptics'
 import { useMobileTranslation } from '../../../i18n/use-mobile-translation'
@@ -61,7 +61,7 @@ export function useMobileAutomationRowWording(
 
 /** The send's error, or why its chat was refused in chat's words; the phone's copy names no computer. */
 function startErrorText(failure: Pick<MergedRunFailure, 'error' | 'refusal'>): string {
-  return failure.refusal ? mobileBotRefusalText(failure.refusal) : failure.error
+  return failure.refusal ? mobileAgentSessionRefusalText(failure.refusal) : failure.error
 }
 
 /** A transcript message that is an automation's run, or one no chat took, as its row. */

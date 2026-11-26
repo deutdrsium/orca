@@ -48,7 +48,6 @@ export type MobileStructuredAgentLaunchResult =
   | {
       kind: 'unsupported'
       reason?: StructuredCreateSupport['reason']
-      /** The host's refusal, when it answered with one. */
       refusal?: AgentSessionRefusalReference
     }
   | { kind: 'failed'; message: string; refusal?: AgentSessionRefusalReference }
@@ -83,8 +82,7 @@ function createParamsFor(
     sessionId: createOrcaSessionId(randomV4Uuid),
     worktree,
     agent,
-    ...(source.forkFrom ? { forkFrom: source.forkFrom } : {}),
-    ...(source.resumeFrom ? { resumeFrom: source.resumeFrom } : {}),
+    ...source,
     ...(tabPlacement ? { tabPlacement } : {}),
     randomUuid: randomV4Uuid
   })

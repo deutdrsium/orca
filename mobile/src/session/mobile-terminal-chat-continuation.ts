@@ -7,11 +7,9 @@ import { probePtyRunningWorkWithInspection } from '../../../src/shared/terminal/
 import type { TerminalProcessInspection } from '../../../src/shared/terminal/pty/lifecycle/terminal-process-inspection'
 import { STRUCTURED_AGENT_SESSION_CLI_SOURCE_RUNTIME_CAPABILITY } from '../../../src/shared/agent-session/capabilities/structured-agent-session-surface-capabilities'
 import { AGENT_SESSION_CREATE_TAB_PLACEMENT_RUNTIME_CAPABILITY } from '../../../src/shared/agent-session/lifecycle/operations/agent-session-create-capabilities'
-import { agentSessionStartRefusalParts } from '../../../src/shared/agent-session/failures/agent-session-refusal-notice'
-import { agentSessionRefusalFailure } from '../../../src/shared/agent-session/failures/agent-session-write-failure'
 import type { AgentSessionRefusalReference } from '../../../src/shared/agent-session/failures/agent-session-wire-refusals'
 import type { TuiAgent } from '../../../src/shared/agent-launch/catalog/tui-agent'
-import { mobileAgentSessionWriteNoticeText } from './native-chat/agent-session/agent-session-write-notice-copy'
+import { mobileAgentSessionRefusalText } from './native-chat/agent-session/mobile-agent-session-refusal-text'
 import {
   preflightMobileStructuredAgentResume,
   resumeMobileStructuredAgentSession
@@ -28,6 +26,7 @@ import {
 } from './tabs/pending-session-selection'
 import { releaseTerminalCreateLock } from '../terminal/session/creation/terminal-create-lock'
 import type { MobileSessionController } from './use-mobile-session-controller'
+import type { RpcClient } from '../transport/rpc/rpc-client-contract'
 
 type ContinuationScope = Pick<
   MobileSessionController,
@@ -91,7 +90,7 @@ export async function continueMobileTerminalInChat(
         { timeoutMs: PROBE_TIMEOUT_MS },
         inspect
       )
-      return probe?.verdict === 'unverifiable' || !probe
+      return !probe || probe.verdict === 'unverifiable'
         ? { probe, close: null }
         : { probe, close: cliChatResumeCloseFromProbe(probe, source.agent) }
     }
@@ -105,7 +104,7 @@ export async function continueMobileTerminalInChat(
       return
     }
     const closes = close === 'close'
-    const agent = await admittedChatAgent(scope, source, closes, report)
+    const agent = await admittedChatAgent(client, scope.worktreeId, source, closes, report)
     if (!agent) {
       return
     }
@@ -183,7 +182,9 @@ export async function continueMobileTerminalInChat(
       report(copy.unconfirmed())
     } else {
       // Agent History holds the conversation only when the terminal had saved one.
-      report(copy.failed(refusalWords(result.refusal, result.message), closed && !fresh))
+      report(
+        copy.failed(refusalWords(result.refusal, result.message || undefined), closed && !fresh)
+      )
     }
   } catch {
     report(closed ? copy.unconfirmed() : copy.failed(copy.tryAgain(), false))
@@ -199,17 +200,14 @@ export async function continueMobileTerminalInChat(
 /** The first chat agent the host admits for this conversation, asked before the terminal closes;
  *  null once a refusal has been said. */
 async function admittedChatAgent(
-  scope: ContinuationScope,
+  client: RpcClient,
+  worktreeId: string,
   source: MobileTerminalChatContinuation,
   closes: boolean,
   report: (message: string) => void
 ): Promise<TuiAgent | null> {
-  const { client } = scope
-  if (!client) {
-    return null
-  }
   for (const agent of CLI_CONVERSATION_ADOPTING_AGENTS[source.agent]) {
-    const refusal = await preflightMobileStructuredAgentResume(client, scope.worktreeId, agent, {
+    const refusal = await preflightMobileStructuredAgentResume(client, worktreeId, agent, {
       providerSessionId: source.providerSessionId,
       // Only the pane this closes: another split running the conversation must still refuse.
       ...(closes ? { closingPaneKeys: [source.paneKey] } : {})
@@ -220,7 +218,7 @@ async function admittedChatAgent(
     // A refusal about this conversation (another writer, another folder) holds for every agent;
     // one about this agent leaves the next to try.
     if (refusal.refusal && refusal.refusal.code !== 'structured_agent_session_unsupported') {
-      report(copy.failed(refusalWords(refusal.refusal, ''), false))
+      report(copy.failed(refusalWords(refusal.refusal), false))
       return null
     }
     // No answer at all (a dropped link) says nothing about the agent.
@@ -233,12 +231,11 @@ async function admittedChatAgent(
   return null
 }
 
-function refusalWords(refusal: AgentSessionRefusalReference | undefined, fallback: string): string {
-  return refusal
-    ? mobileAgentSessionWriteNoticeText(
-        agentSessionStartRefusalParts(agentSessionRefusalFailure(refusal))
-      )
-    : fallback || copy.tryAgain()
+function refusalWords(
+  refusal: AgentSessionRefusalReference | undefined,
+  fallback = copy.tryAgain()
+): string {
+  return refusal ? mobileAgentSessionRefusalText(refusal) : fallback
 }
 
 const copy = {
