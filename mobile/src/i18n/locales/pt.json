@@ -3162,7 +3162,7 @@
       "collapse": "Recolher"
     },
     "nativeChatCliFork": {
-      "resumeInNewCli": "Retomar em nova CLI"
+      "continueInTerminal": "Continuar no terminal"
     },
     "nativeChatFloatingControls": {
       "scrollToLatest": "Rolar até o conteúdo mais recente"
@@ -3754,6 +3754,16 @@
       "terminalTitle": "Texto do terminal",
       "pointsAndColumns": "{{points}} · {{count}} colunas",
       "moreTerminal": "Mais configurações do terminal"
+    },
+    "terminalChatContinuation": {
+      "busy": "Outro chat ou terminal está sendo aberto. Aguarde e tente novamente.",
+      "continueInChat": "Continuar no chat",
+      "failed": "Não foi possível continuar no chat. {{detail}}",
+      "failedAfterClose": "Não foi possível continuar no chat. {{detail}} A conversa está no histórico de agentes.",
+      "otherJob": "{{process}} está em execução neste terminal. Encerre-o e continue no chat.",
+      "tryAgain": "Tente novamente.",
+      "unavailable": "Os chats do {{agent}} não estão disponíveis neste computador.",
+      "unconfirmed": "O Orca não conseguiu confirmar que o chat foi aberto. Verifique suas abas antes de tentar novamente."
     }
   },
   "settings": {

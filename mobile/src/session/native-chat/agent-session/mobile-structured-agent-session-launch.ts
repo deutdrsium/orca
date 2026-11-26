@@ -13,8 +13,14 @@ import {
 import {
   structuredAgentSessionCreateParams,
   type StructuredAgentSessionCreateParams,
-  type StructuredAgentSessionForkSource
+  type StructuredAgentSessionForkSource,
+  type StructuredAgentSessionResumeSource
 } from '../../../../../src/shared/agent-session/lifecycle/operations/structured-agent-session-create'
+import { readAgentSessionErrorRefusal } from '../../../../../src/shared/agent-session/failures/agent-session-write-failure'
+import {
+  readAgentSessionRefusalReference,
+  type AgentSessionRefusalReference
+} from '../../../../../src/shared/agent-session/failures/agent-session-wire-refusals'
 import type { StructuredAgentCreateSupportReply } from '../../../../../src/shared/agent-session/lifecycle/operations/structured-agent-create-support-reply'
 import { TUI_AGENT_DISPLAY_NAMES } from '../../../../../src/shared/agent-launch/catalog/tui-agent-display-names'
 import { hasRuntimeRpcErrorCode } from '../../../../../src/shared/remote-runtime/rpc/runtime-rpc-error-code'
@@ -39,8 +45,13 @@ function delay(ms: number): Promise<void> {
 
 export type MobileStructuredAgentLaunchResult =
   | { kind: 'created'; sessionId: string }
-  | { kind: 'unsupported'; reason?: StructuredCreateSupport['reason'] }
-  | { kind: 'failed'; message: string }
+  | {
+      kind: 'unsupported'
+      reason?: StructuredCreateSupport['reason']
+      /** The host's refusal, when it answered with one. */
+      refusal?: AgentSessionRefusalReference
+    }
+  | { kind: 'failed'; message: string; refusal?: AgentSessionRefusalReference }
   | { kind: 'unknown'; message: string }
 
 /** What `agentSession.create` alone can answer; only the createSupport probe yields `unsupported`. */
@@ -49,17 +60,31 @@ type MobileStructuredAgentCreateResult = Exclude<
   { kind: 'unsupported' }
 >
 
+/** A chat starts fresh, forks a native chat, or resumes a provider conversation. */
+type CreateSource = {
+  forkFrom?: StructuredAgentSessionForkSource
+  resumeFrom?: StructuredAgentSessionResumeSource
+}
+
+/** What createSupport is asked about resuming: whether another terminal still runs it, apart from
+ *  the panes the phone closes first. */
+export type MobileStructuredResumePreflight = {
+  providerSessionId: string
+  closingPaneKeys?: string[]
+}
+
 function createParamsFor(
   agent: TuiAgent,
   worktree: string,
-  forkFrom: StructuredAgentSessionForkSource | undefined,
+  source: CreateSource,
   tabPlacement: StructuredAgentSessionCreateParams['tabPlacement']
 ): StructuredAgentSessionCreateParams {
   return structuredAgentSessionCreateParams({
     sessionId: createOrcaSessionId(randomV4Uuid),
     worktree,
     agent,
-    ...(forkFrom ? { forkFrom } : {}),
+    ...(source.forkFrom ? { forkFrom: source.forkFrom } : {}),
+    ...(source.resumeFrom ? { resumeFrom: source.resumeFrom } : {}),
     ...(tabPlacement ? { tabPlacement } : {}),
     randomUuid: randomV4Uuid
   })
@@ -82,24 +107,34 @@ function failedMessage(agent: TuiAgent): string {
 function classifyCreateRefusal(
   agent: TuiAgent,
   code: string,
-  message: string
+  message: string,
+  refusal?: AgentSessionRefusalReference
 ): MobileStructuredAgentCreateResult {
   if (!isDefinitiveAgentSessionCreateRefusal(code)) {
     return unknownCreateResult(agent, new Error(message))
   }
-  return { kind: 'failed', message: message || failedMessage(agent) }
+  return {
+    kind: 'failed',
+    message: message || failedMessage(agent),
+    ...(refusal ? { refusal } : {})
+  }
 }
 
 /** Null when the host admits a new chat here; otherwise the unsupported result to return. */
 async function createSupportRefusal(
   client: RpcClient,
   worktree: string,
-  agent: TuiAgent
+  agent: TuiAgent,
+  resumeFrom?: MobileStructuredResumePreflight
 ): Promise<Extract<MobileStructuredAgentLaunchResult, { kind: 'unsupported' }> | null> {
   let supportResponse
   for (let attempt = 0; ; attempt += 1) {
     try {
-      supportResponse = await structuredAgentSupportProbe.request(client, { worktree, agent })
+      supportResponse = await structuredAgentSupportProbe.request(client, {
+        worktree,
+        agent,
+        ...(resumeFrom ? { resumeFrom } : {})
+      })
     } catch (error) {
       const retryDelayMs = CREATE_SUPPORT_RETRY_DELAYS_MS[attempt]
       if (
@@ -124,10 +159,13 @@ async function createSupportRefusal(
   if (
     !supportResponse ||
     typeof supportResponse !== 'object' ||
-    typeof supportResponse.ok !== 'boolean' ||
-    !supportResponse.ok
+    typeof supportResponse.ok !== 'boolean'
   ) {
     return { kind: 'unsupported' }
+  }
+  if (!supportResponse.ok) {
+    const refusal = readAgentSessionErrorRefusal(supportResponse.error)
+    return refusal ? { kind: 'unsupported', refusal } : { kind: 'unsupported' }
   }
   const support = supportResponse.result as StructuredCreateSupport | null
   if (!support || typeof support !== 'object' || support.supported !== true) {
@@ -148,6 +186,33 @@ export async function createMobileStructuredAgentSession(
   )
 }
 
+/** Asks the host whether a chat may take over a terminal's conversation, before anything closes. */
+export function preflightMobileStructuredAgentResume(
+  client: RpcClient,
+  worktreeId: string,
+  agent: TuiAgent,
+  resumeFrom: MobileStructuredResumePreflight
+): Promise<Extract<MobileStructuredAgentLaunchResult, { kind: 'unsupported' }> | null> {
+  return createSupportRefusal(client, `id:${worktreeId}`, agent, resumeFrom)
+}
+
+/** A chat that takes over a terminal's conversation; the host derives every path from its identity. */
+export function resumeMobileStructuredAgentSession(
+  client: RpcClient,
+  worktreeId: string,
+  agent: TuiAgent,
+  resumeFrom: StructuredAgentSessionResumeSource,
+  tabPlacement?: StructuredAgentSessionCreateParams['tabPlacement']
+): Promise<MobileStructuredAgentCreateResult> {
+  return requestStructuredAgentSessionCreate(
+    client,
+    `id:${worktreeId}`,
+    agent,
+    { resumeFrom },
+    tabPlacement
+  )
+}
+
 /** Skips createSupport: a fork never falls back to a terminal, and that probe refuses phones on terminal-default hosts. */
 export function forkMobileStructuredAgentSession(
   client: RpcClient,
@@ -161,7 +226,7 @@ export function forkMobileStructuredAgentSession(
     client,
     `id:${worktreeId}`,
     agent,
-    forkFrom,
+    { forkFrom },
     tabPlacement
   )
 }
@@ -170,10 +235,11 @@ async function requestStructuredAgentSessionCreate(
   client: RpcClient,
   worktree: string,
   agent: TuiAgent,
-  forkFrom?: StructuredAgentSessionForkSource,
+  source: CreateSource = {},
   tabPlacement?: StructuredAgentSessionCreateParams['tabPlacement']
 ): Promise<MobileStructuredAgentCreateResult> {
-  const params = createParamsFor(agent, worktree, forkFrom, tabPlacement)
+  const { forkFrom } = source
+  const params = createParamsFor(agent, worktree, source, tabPlacement)
   rememberMobileCreatedStructuredSession(params.envelope.sessionId, worktree)
   let response
   let priorCreateOutcomeUnknown = false
@@ -242,7 +308,12 @@ async function requestStructuredAgentSessionCreate(
           ) ?? result.refusal.message
       }
     }
-    return classifyCreateRefusal(agent, result.refusal.code, result.refusal.message)
+    return classifyCreateRefusal(
+      agent,
+      result.refusal.code,
+      result.refusal.message,
+      readAgentSessionRefusalReference(result.refusal)
+    )
   }
   if (
     !result.value ||

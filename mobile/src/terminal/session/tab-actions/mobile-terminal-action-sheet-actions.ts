@@ -16,6 +16,8 @@ export function getMobileTerminalActionSheetActions<
   nativeChatTranscriptIsLocalReadable: boolean
   onDismiss: () => void
   onToggleChat: (tabId: string) => void
+  /** Continue in chat, for a terminal whose conversation a chat can take over. */
+  chatContinuationActions?: ActionSheetAction[]
   isPhoneMode: (handle: string) => boolean
   onToggleDisplayMode: (handle: string) => void
   onRename: (target: Target) => void
@@ -43,6 +45,7 @@ export function getMobileTerminalActionSheetActions<
       onClose: args.onDismiss,
       onToggle: args.onToggleChat
     }),
+    ...(args.chatContinuationActions ?? []),
     {
       id: 'toggleDisplayMode',
       label: phoneMode

@@ -3423,7 +3423,7 @@
       "collapse": "Daralt"
     },
     "nativeChatCliFork": {
-      "resumeInNewCli": "Yeni CLI'de Devam Et"
+      "continueInTerminal": "Terminalde devam et"
     },
     "nativeChatFloatingControls": {
       "scrollToLatest": "En sona kaydır"
@@ -4013,6 +4013,16 @@
       "skip": "Atla",
       "stop": "Durdur",
       "yes": "Evet"
+    },
+    "terminalChatContinuation": {
+      "busy": "Başka bir sohbet veya terminal açılıyor. Bekleyin, sonra tekrar deneyin.",
+      "continueInChat": "Sohbette devam et",
+      "failed": "Sohbette devam edilemedi. {{detail}}",
+      "failedAfterClose": "Sohbette devam edilemedi. {{detail}} Konuşma Ajan Geçmişi'nde.",
+      "otherJob": "Bu terminalde {{process}} çalışıyor. Kapatın, ardından sohbette devam edin.",
+      "tryAgain": "Tekrar deneyin.",
+      "unavailable": "{{agent}} sohbetleri bu bilgisayarda kullanılamıyor.",
+      "unconfirmed": "Orca sohbetin açıldığını doğrulayamadı. Tekrar denemeden önce sekmelerinizi kontrol edin."
     }
   },
   "settings": {

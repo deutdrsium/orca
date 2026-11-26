@@ -2926,7 +2926,7 @@
       "collapse": "折りたたむ"
     },
     "nativeChatCliFork": {
-      "resumeInNewCli": "新しい CLI で再開"
+      "continueInTerminal": "ターミナルで続行"
     },
     "nativeChatFloatingControls": {
       "scrollToLatest": "最新の内容にスクロール"
@@ -3516,6 +3516,16 @@
       "terminalTitle": "ターミナルのテキスト",
       "pointsAndColumns": "{{points}} · {{count}} 列",
       "moreTerminal": "その他のターミナル設定"
+    },
+    "terminalChatContinuation": {
+      "busy": "別のチャットまたはターミナルを開いています。しばらく待ってから再試行してください。",
+      "continueInChat": "チャットで続行",
+      "failed": "チャットで続行できませんでした。{{detail}}",
+      "failedAfterClose": "チャットで続行できませんでした。{{detail}} 会話はエージェント履歴にあります。",
+      "otherJob": "このターミナルで {{process}} が実行中です。終了してからチャットで続行してください。",
+      "tryAgain": "再試行してください。",
+      "unavailable": "このコンピューターでは {{agent}} のチャットを利用できません。",
+      "unconfirmed": "チャットが開いたことを Orca が確認できませんでした。再試行する前にタブを確認してください。"
     }
   },
   "settings": {

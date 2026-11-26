@@ -11,7 +11,7 @@ type BulkCloseSheetDeps = {
   markdownDocs: ReadonlyMap<string, MarkdownDocState>
   activeSessionTabIdRef: { readonly current: string | null }
   switchSessionTab: (tab: MobileSessionTab) => void
-  closeSessionTab: (tab: MobileSessionTab) => Promise<void>
+  closeSessionTab: (tab: MobileSessionTab) => Promise<unknown>
   confirmBulkClose: () => Promise<boolean>
 }
 
@@ -72,7 +72,7 @@ export function createBulkCloseSheetActions(deps: BulkCloseSheetDeps) {
 }
 
 export function createCloseWithBulkActions(
-  closeSessionTab: (tab: MobileSessionTab) => Promise<void>,
+  closeSessionTab: (tab: MobileSessionTab) => Promise<unknown>,
   bulkActions: ReturnType<typeof createBulkCloseSheetActions>
 ) {
   return (target: MobileSessionTab | null, dismiss: () => void): ActionSheetAction[] => [

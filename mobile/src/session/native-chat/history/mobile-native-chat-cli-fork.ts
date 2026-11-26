@@ -38,8 +38,9 @@ export function getMobileNativeChatCliForkActions(args: {
   }
   return [
     {
-      id: 'resumeInNewCli',
-      label: translate('session.nativeChatCliFork.resumeInNewCli', 'Resume in New CLI'),
+      id: 'continueInTerminal',
+      // The desktop's word for the same move: the conversation goes on in a new terminal tab.
+      label: translate('session.nativeChatCliFork.continueInTerminal', 'Continue in terminal'),
       icon: SquareTerminal,
       onPress: () => {
         args.onDismiss()

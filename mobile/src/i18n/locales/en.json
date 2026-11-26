@@ -2758,7 +2758,7 @@
       "commands": "Commands"
     },
     "nativeChatCliFork": {
-      "resumeInNewCli": "Resume in New CLI"
+      "continueInTerminal": "Continue in terminal"
     },
     "nativeChatRenderData": {
       "notFoundTitle": "Can't find this conversation yet",
@@ -3344,6 +3344,16 @@
     },
     "orcaCommands": {
       "desktopOnly": "Available in the desktop app"
+    },
+    "terminalChatContinuation": {
+      "busy": "Another chat or terminal is opening. Wait, then try again.",
+      "continueInChat": "Continue in chat",
+      "failed": "Couldn't continue in chat. {{detail}}",
+      "failedAfterClose": "Couldn't continue in chat. {{detail}} The conversation is in Agent History.",
+      "otherJob": "{{process}} is running in this terminal. Quit it, then continue in chat.",
+      "tryAgain": "Try again.",
+      "unavailable": "{{agent}} chats aren't available on this computer.",
+      "unconfirmed": "Orca couldn't confirm the chat opened. Check your tabs before trying again."
     }
   },
   "chat": {

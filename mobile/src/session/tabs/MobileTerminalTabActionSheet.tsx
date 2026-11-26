@@ -5,6 +5,12 @@ import { isTerminalPhoneDisplayMode } from '../../terminal/session/pane-layout/t
 import { useMobileAllowAutoCloseActions } from './mobile-worker-auto-close'
 import { mobileSessionTabMenuHeader } from './MobileSessionTabMark'
 import type { MobileSessionController } from '../use-mobile-session-controller'
+import { useWorkspaceOnPairedHost } from '../../navigation/workspace-execution-host'
+import {
+  getMobileTerminalChatContinuationActions,
+  resolveMobileTerminalChatContinuation
+} from '../native-chat/history/mobile-terminal-chat-continuation-actions'
+import { continueMobileTerminalInChat } from '../mobile-terminal-chat-continuation'
 
 /** The tapped terminal tab's actions: chat view, display size, rename, clear, close. */
 export function MobileTerminalTabActionSheet({
@@ -18,7 +24,20 @@ export function MobileTerminalTabActionSheet({
     controller.client,
     actionTarget && { terminal: actionTarget.handle }
   )
+  const workspaceOnPairedHost = useWorkspaceOnPairedHost()
   const terminalTabs = sessionTabs.filter((tab) => tab.type === 'terminal')
+  const chatContinuationActions = getMobileTerminalChatContinuationActions({
+    continuation: resolveMobileTerminalChatContinuation({
+      tab: actionTarget && terminalTabs.find((tab) => tab.terminal === actionTarget.handle),
+      hostCapabilities: controller.hostCapabilities,
+      workspaceOnPairedHost
+    }),
+    onDismiss: () => setActionTarget(null),
+    onContinue: (continuation) => void continueMobileTerminalInChat(controller, continuation)
+  }).map((action) => ({
+    ...action,
+    disabled: controller.createTabBusy || controller.connState !== 'connected'
+  }))
   return (
     <ActionSheetModal
       visible={actionTarget != null}
@@ -35,6 +54,7 @@ export function MobileTerminalTabActionSheet({
         nativeChatTranscriptIsLocalReadable: controller.nativeChatTranscriptIsLocalReadable,
         onDismiss: () => setActionTarget(null),
         onToggleChat: controller.toggleTabChatView,
+        chatContinuationActions,
         isPhoneMode: (handle) => isTerminalPhoneDisplayMode(handle, controller.terminalModes),
         onToggleDisplayMode: (handle) => void controller.toggleDisplayMode(handle),
         onRename: controller.setRenameTarget,
