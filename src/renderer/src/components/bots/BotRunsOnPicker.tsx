@@ -245,17 +245,20 @@ export function BotRunsOnPicker({
       </div>
     )
   }
+  // Full label on hover, since a long host truncates it.
+  const runsOnLabel = t('bots.new.runsOnLink', '{{host}} · {{agent}}', {
+    host: host.label,
+    agent: noAgents ? agentLabel : botAgentLabel(chosen)
+  })
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
+          title={runsOnLabel}
           className="min-w-0 truncate rounded-sm text-left text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-expanded:text-foreground"
         >
-          {t('bots.new.runsOnLink', '{{host}} · {{agent}}', {
-            host: host.label,
-            agent: noAgents ? agentLabel : botAgentLabel(chosen)
-          })}
+          {runsOnLabel}
         </button>
       </PopoverTrigger>
       <PopoverContent
