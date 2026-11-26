@@ -83,14 +83,17 @@ export async function continueMobileTerminalInChat(
       return inspection
     }
     // Unlike desktop, the phone has no running-process prompt to fall back on, so it acts only on
-    // the host's proof of what the pane runs; an unanswered check (slow link) closes nothing.
+    // the host's proof of what the pane runs: an unanswered check (slow link), or work running
+    // under no name, closes nothing.
     const probeClose = async () => {
       const [probe] = await probePtyRunningWorkWithInspection(
         [source.terminal],
         { timeoutMs: PROBE_TIMEOUT_MS },
         inspect
       )
-      return !probe || probe.verdict === 'unverifiable'
+      return !probe ||
+        probe.verdict === 'unverifiable' ||
+        (probe.verdict === 'live' && !probe.foregroundProcess)
         ? { probe, close: null }
         : { probe, close: cliChatResumeCloseFromProbe(probe, source.agent) }
     }
