@@ -21,6 +21,7 @@ import {
   type BotImportCandidate,
   type BotImportSource
 } from '../../../../shared/bots/bot-import'
+import { BotAvatar } from './BotAvatar'
 import { botErrorMessage } from './bot-presentation'
 import { BotNameSuggestion, takeSuggestionOnTab } from './BotNameSuggestion'
 import { BotRunsOnPicker } from './BotRunsOnPicker'
@@ -218,6 +219,11 @@ export function ImportBotDialog({
           generate={face}
           disabled={creating}
           pencil="hover"
+          readOnly={
+            existing ? (
+              <BotAvatar bot={existing} size="large" className="size-16 shrink-0 rounded-[18px]" />
+            ) : undefined
+          }
         >
           <Input
             aria-label={t('bots.new.name', 'Name')}

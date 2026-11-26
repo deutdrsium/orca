@@ -29213,7 +29213,8 @@
       "seeMessage": "Mesajı gör",
       "addStep": "Oluşturduğu klasörü ekle",
       "replyLabel": "Yanıtı",
-      "rowDetail": "{{app}} {{kind}}"
+      "rowDetail": "{{app}} {{kind}}",
+      "back": "Geri"
     },
     "section": {
       "scrollLeft": "Sola kaydır · {{amount}} gizli",

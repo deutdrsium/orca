@@ -70,6 +70,8 @@ function Stage({ width, height = 420 }: { width: number; height?: number }): Rea
       className="relative translate-x-0 bg-background"
       style={{ width: width + 32, height }}
     >
+      {/* The page is wider than the stage, so the dialog's wide-window cap would apply; hold it to the stage. */}
+      <style>{`[data-slot="dialog-content"]{max-width:${width}px !important}`}</style>
       {box ? (
         <PortalContainerContext.Provider value={box}>
           <ImportBotDialog open onOpenChange={() => {}} />
@@ -100,47 +102,72 @@ const fixture = (
 export const one = defineFixture(fixture(420, ONE))
 export const oneNarrow = defineFixture(fixture(300, ONE))
 export const several = defineFixture(fixture(420, SEVERAL))
+// Waits for `find` to return an element, so a shot never captures the state before an interaction.
+async function waitFor<T>(find: () => T | null | undefined, what: string): Promise<T> {
+  for (let tries = 0; tries < 40; tries++) {
+    const found = find()
+    if (found) {
+      return found
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50))
+  }
+  throw new Error(`Import fixture: ${what} never appeared`)
+}
+
+const buttonNamed = (text: string) => () =>
+  [...document.querySelectorAll<HTMLButtonElement>('[role="dialog"] button')].find(
+    (button) => button.textContent === text
+  )
+
 export const severalOpen = defineFixture({
   ...fixture(420, SEVERAL),
   interact: async () => {
-    await new Promise((resolve) => setTimeout(resolve, 100))
-    const trigger = document.querySelector<HTMLElement>('[role="dialog"] h2 button')
-    trigger?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 }))
-    await new Promise((resolve) => setTimeout(resolve, 200))
+    const trigger = await waitFor(
+      () => document.querySelector<HTMLElement>('[role="dialog"] h2 button'),
+      'the source switcher'
+    )
+    trigger.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 }))
+    await waitFor(() => document.querySelector('[role="menuitemradio"]'), 'the source menu')
   }
 })
 export const longNames = defineFixture(fixture(300, LONG, LONG_FIXTURE_COMPUTER))
 export const runsOnOpen = defineFixture({
   ...fixture(420, ONE, undefined, 640),
   interact: async () => {
-    await new Promise((resolve) => setTimeout(resolve, 100))
-    document.querySelector<HTMLElement>('[data-slot="dialog-footer-start"] button')?.click()
-    await new Promise((resolve) => setTimeout(resolve, 200))
+    const link = await waitFor(
+      () => document.querySelector<HTMLElement>('[data-slot="dialog-footer-start"] button'),
+      'the runtime link'
+    )
+    link.click()
+    await waitFor(() => document.querySelector('[data-slot="popover-content"]'), 'the runtime card')
   }
 })
 export const noneFound = defineFixture(fixture(420, [], undefined, 560))
 export const pictureOpen = defineFixture({
   ...fixture(420, ONE, undefined, 640),
   interact: async () => {
-    await new Promise((resolve) => setTimeout(resolve, 100))
-    document.querySelector<HTMLElement>('[role="dialog"] button[aria-haspopup="dialog"]')?.click()
-    await new Promise((resolve) => setTimeout(resolve, 300))
+    const button = await waitFor(
+      () =>
+        document.querySelector<HTMLElement>('[role="dialog"] button[aria-label="Change picture"]'),
+      'the picture button'
+    )
+    button.click()
+    await waitFor(
+      () => document.querySelector('[data-slot="popover-content"]'),
+      'the picture picker'
+    )
   }
 })
 export const importedBefore = defineFixture(fixture(420, AGAIN))
+const openExport = async (): Promise<void> => {
+  ;(await waitFor(buttonNamed('From export'), 'From export')).click()
+  await waitFor(buttonNamed('Back'), 'Back')
+}
 export const fromExport = defineFixture({
   ...fixture(420, ONE, undefined, 600),
-  interact: async () => {
-    await new Promise((resolve) => setTimeout(resolve, 150))
-    const link = [...document.querySelectorAll<HTMLButtonElement>('[role="dialog"] button')].find(
-      (button) => button.textContent === 'From export'
-    )
-    link?.click()
-    await new Promise((resolve) => setTimeout(resolve, 200))
-  }
+  interact: openExport
 })
 export const fromExportNarrow = defineFixture({
-  ...fromExport,
   ...fixture(300, ONE, undefined, 640),
-  interact: fromExport.interact
+  interact: openExport
 })

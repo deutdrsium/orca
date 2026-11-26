@@ -29937,7 +29937,8 @@
       "seeMessage": "查看消息",
       "addStep": "添加它生成的文件夹",
       "replyLabel": "它的回复",
-      "rowDetail": "{{app}} {{kind}}"
+      "rowDetail": "{{app}} {{kind}}",
+      "back": "返回"
     },
     "avatar": {
       "intake": {
