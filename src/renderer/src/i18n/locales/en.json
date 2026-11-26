@@ -29252,7 +29252,9 @@
       "rowDetail": "{{app}} {{kind}}",
       "titleFrom": "Import from {{source}}",
       "import": "Import",
-      "importing": "Importing…"
+      "importing": "Importing…",
+      "fromExport": "From export",
+      "back": "Back"
     },
     "composio": {
       "connectedAs": "Connected as {{label}}",

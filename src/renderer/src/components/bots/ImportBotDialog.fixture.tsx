@@ -128,3 +128,19 @@ export const pictureOpen = defineFixture({
   }
 })
 export const importedBefore = defineFixture(fixture(420, AGAIN))
+export const fromExport = defineFixture({
+  ...fixture(420, ONE, undefined, 600),
+  interact: async () => {
+    await new Promise((resolve) => setTimeout(resolve, 150))
+    const link = [...document.querySelectorAll<HTMLButtonElement>('[role="dialog"] button')].find(
+      (button) => button.textContent === 'From export'
+    )
+    link?.click()
+    await new Promise((resolve) => setTimeout(resolve, 200))
+  }
+})
+export const fromExportNarrow = defineFixture({
+  ...fromExport,
+  ...fixture(300, ONE, undefined, 640),
+  interact: fromExport.interact
+})

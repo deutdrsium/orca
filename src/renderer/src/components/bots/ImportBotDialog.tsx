@@ -58,6 +58,8 @@ export function ImportBotDialog({
   const { hostId, blocked } = hostChoice.host
   const read = useBotImportSources(open, hostId)
   const [picked, setPicked] = useState<ImportPick | null>(null)
+  // With bots found, the owner can still bring over an export instead.
+  const [fromExport, setFromExport] = useState(false)
   const [exported, setExported] = useState<ImportBotExport>(NO_EXPORT)
   // Follows the picked bot until the owner types one.
   const [typedName, setTypedName] = useState<string | null>(null)
@@ -76,7 +78,7 @@ export function ImportBotDialog({
       : []
   // With nothing found there is nothing to pick: straight to asking the old bot.
   const nothingFound = read.status !== 'loading' && picks.length === 0
-  const exporting = nothingFound
+  const exporting = nothingFound || fromExport
   // A pick from another computer's list, before the host changed, gives way to this one's first.
   const pick = exporting
     ? null
@@ -112,6 +114,7 @@ export function ImportBotDialog({
 
   const close = (): void => {
     setPicked(null)
+    setFromExport(false)
     setExported(NO_EXPORT)
     setTypedName(null)
     intake.dismiss()
@@ -248,9 +251,24 @@ export function ImportBotDialog({
             </BotNameSuggestion>
           ) : null}
         </NewBotPictureButton>
+        {picks.length > 0 ? (
+          <button
+            type="button"
+            className="-mt-1 self-start justify-self-start rounded-sm text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none"
+            disabled={creating}
+            onClick={() => {
+              setTypedName(null)
+              setFromExport(!fromExport)
+            }}
+          >
+            {fromExport
+              ? t('bots.import.back', 'Back')
+              : t('bots.import.fromExport', 'From export')}
+          </button>
+        ) : null}
         {exporting ? (
           <div className="space-y-2">
-            {read.status === 'ready' ? (
+            {nothingFound && read.status === 'ready' ? (
               <p className="text-xs text-muted-foreground">
                 {t(
                   'bots.import.noneFoundNote',
