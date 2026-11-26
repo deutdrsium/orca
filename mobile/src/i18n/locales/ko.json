@@ -3650,8 +3650,10 @@
       "failed": "채팅에서 계속할 수 없습니다. {{detail}}",
       "failedAfterClose": "채팅에서 계속할 수 없습니다. {{detail}} 대화는 에이전트 기록에 있습니다.",
       "otherJob": "이 터미널에서 {{process}}이(가) 실행 중입니다. 종료한 뒤 채팅에서 계속하세요.",
+      "terminalChanged": "Orca가 확인하는 동안 이 터미널이 바뀌었습니다. 다시 시도하세요.",
       "tryAgain": "다시 시도하세요.",
       "unavailable": "이 컴퓨터에서는 {{agent}} 채팅을 사용할 수 없습니다.",
+      "uncheckable": "Orca가 이 터미널에서 실행 중인 항목을 확인하지 못했습니다. 다시 시도하세요.",
       "unconfirmed": "Orca가 채팅이 열렸는지 확인하지 못했습니다. 다시 시도하기 전에 탭을 확인하세요."
     }
   },

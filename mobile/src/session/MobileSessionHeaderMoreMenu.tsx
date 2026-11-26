@@ -161,8 +161,7 @@ export function MobileSessionHeaderMoreMenu({ controller, anchorRef, actionsColl
     ...getMobileTerminalChatContinuationActions({
       continuation: resolveMobileTerminalChatContinuation({
         tab: activeSessionTab,
-        hostCapabilities: controller.hostCapabilities,
-        workspaceOnPairedHost
+        hostCapabilities: controller.hostCapabilities
       }),
       onDismiss: () => setShowHeaderMoreActions(false),
       onContinue: (continuation) => void continueMobileTerminalInChat(controller, continuation)

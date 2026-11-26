@@ -22,16 +22,15 @@ export type MobileTerminalChatContinuation = {
   paneKey: string
 }
 
-/** A terminal whose agent's conversation a chat can take over, on a host that lets a phone do it.
+/** A terminal whose agent's conversation a chat can take over, on a host that lets a phone do it;
+ *  a server workspace's gates are that server's own.
  *  Agents with the in-place chat view keep that instead, so a tab never offers both. */
 export function resolveMobileTerminalChatContinuation(args: {
   tab: MobileSessionTab | null | undefined
   hostCapabilities: readonly string[] | undefined
-  workspaceOnPairedHost: boolean
 }): MobileTerminalChatContinuation | null {
   const { tab, hostCapabilities } = args
   if (
-    !args.workspaceOnPairedHost ||
     tab?.type !== 'terminal' ||
     !tab.terminal ||
     !hostCapabilities?.includes(SESSION_TABS_CONTINUE_TERMINAL_IN_CHAT_RUNTIME_CAPABILITY) ||

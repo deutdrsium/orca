@@ -5,7 +5,6 @@ import { isTerminalPhoneDisplayMode } from '../../terminal/session/pane-layout/t
 import { useMobileAllowAutoCloseActions } from './mobile-worker-auto-close'
 import { mobileSessionTabMenuHeader } from './MobileSessionTabMark'
 import type { MobileSessionController } from '../use-mobile-session-controller'
-import { useWorkspaceOnPairedHost } from '../../navigation/workspace-execution-host'
 import {
   getMobileTerminalChatContinuationActions,
   resolveMobileTerminalChatContinuation
@@ -24,13 +23,12 @@ export function MobileTerminalTabActionSheet({
     controller.client,
     actionTarget && { terminal: actionTarget.handle }
   )
-  const workspaceOnPairedHost = useWorkspaceOnPairedHost()
   const terminalTabs = sessionTabs.filter((tab) => tab.type === 'terminal')
+  const targetTab = actionTarget && terminalTabs.find((tab) => tab.terminal === actionTarget.handle)
   const chatContinuationActions = getMobileTerminalChatContinuationActions({
     continuation: resolveMobileTerminalChatContinuation({
-      tab: actionTarget && terminalTabs.find((tab) => tab.terminal === actionTarget.handle),
-      hostCapabilities: controller.hostCapabilities,
-      workspaceOnPairedHost
+      tab: targetTab,
+      hostCapabilities: controller.hostCapabilities
     }),
     onDismiss: () => setActionTarget(null),
     onContinue: (continuation) => void continueMobileTerminalInChat(controller, continuation)
@@ -41,10 +39,7 @@ export function MobileTerminalTabActionSheet({
   return (
     <ActionSheetModal
       visible={actionTarget != null}
-      {...mobileSessionTabMenuHeader(
-        actionTarget && terminalTabs.find((tab) => tab.terminal === actionTarget.handle),
-        controller.terminals
-      )}
+      {...mobileSessionTabMenuHeader(targetTab, controller.terminals)}
       groupDestructive
       title={actionTarget?.title || t('session.sheets.terminal', 'Terminal')}
       actions={getMobileTerminalActionSheetActions({

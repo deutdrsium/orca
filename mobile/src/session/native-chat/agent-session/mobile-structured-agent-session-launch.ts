@@ -108,9 +108,10 @@ function classifyCreateRefusal(
   agent: TuiAgent,
   code: string,
   message: string,
-  refusal?: AgentSessionRefusalReference
+  refusal?: AgentSessionRefusalReference,
+  definitive = false
 ): MobileStructuredAgentCreateResult {
-  if (!isDefinitiveAgentSessionCreateRefusal(code)) {
+  if (!definitive && !isDefinitiveAgentSessionCreateRefusal(code)) {
     return unknownCreateResult(agent, new Error(message))
   }
   return {
@@ -238,7 +239,7 @@ async function requestStructuredAgentSessionCreate(
   source: CreateSource = {},
   tabPlacement?: StructuredAgentSessionCreateParams['tabPlacement']
 ): Promise<MobileStructuredAgentCreateResult> {
-  const { forkFrom } = source
+  const { forkFrom, resumeFrom } = source
   const params = createParamsFor(agent, worktree, source, tabPlacement)
   rememberMobileCreatedStructuredSession(params.envelope.sessionId, worktree)
   let response
@@ -291,10 +292,11 @@ async function requestStructuredAgentSessionCreate(
     ) {
       return unknownCreateResult(agent, new Error(unconfirmedMessage(agent)))
     }
+    const refusedBeforeCommit =
+      !priorCreateOutcomeUnknown && result.refusal.createAttemptRefusedBeforeCommit === true
     if (
       forkFrom &&
-      !priorCreateOutcomeUnknown &&
-      result.refusal.createAttemptRefusedBeforeCommit === true &&
+      refusedBeforeCommit &&
       (isAgentSessionForkSourceAdmissionRefusal(result.refusal) ||
         isAgentSessionCreateAdmissionRefusal(result.refusal))
     ) {
@@ -312,7 +314,9 @@ async function requestStructuredAgentSessionCreate(
       agent,
       result.refusal.code,
       result.refusal.message,
-      readAgentSessionRefusalReference(result.refusal)
+      readAgentSessionRefusalReference(result.refusal),
+      // A resume refused before commit created nothing, so it says why rather than "unconfirmed".
+      !!resumeFrom && refusedBeforeCommit && isAgentSessionCreateAdmissionRefusal(result.refusal)
     )
   }
   if (

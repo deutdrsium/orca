@@ -3351,8 +3351,10 @@
       "failed": "Couldn't continue in chat. {{detail}}",
       "failedAfterClose": "Couldn't continue in chat. {{detail}} The conversation is in Agent History.",
       "otherJob": "{{process}} is running in this terminal. Quit it, then continue in chat.",
+      "terminalChanged": "This terminal changed while Orca checked it. Try again.",
       "tryAgain": "Try again.",
       "unavailable": "{{agent}} chats aren't available on this computer.",
+      "uncheckable": "Orca couldn't check what's running in this terminal. Try again.",
       "unconfirmed": "Orca couldn't confirm the chat opened. Check your tabs before trying again."
     }
   },

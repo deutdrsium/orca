@@ -79,12 +79,23 @@ export async function continueMobileTerminalInChat(
       }
       return inspection
     }
-    const [probe] = await probePtyRunningWorkWithInspection(
-      [source.terminal],
-      { timeoutMs: PROBE_TIMEOUT_MS },
-      inspect
-    )
-    const close = cliChatResumeCloseFromProbe(probe, source.agent)
+    // Unlike desktop, the phone has no running-process prompt to fall back on, so it acts only on
+    // the host's proof of what the pane runs; an unanswered check (slow link) closes nothing.
+    const probeClose = async () => {
+      const [probe] = await probePtyRunningWorkWithInspection(
+        [source.terminal],
+        { timeoutMs: PROBE_TIMEOUT_MS },
+        inspect
+      )
+      return probe?.verdict === 'unverifiable' || !probe
+        ? { probe, close: null }
+        : { probe, close: cliChatResumeCloseFromProbe(probe, source.agent) }
+    }
+    const { probe, close } = await probeClose()
+    if (close === null) {
+      report(copy.uncheckable())
+      return
+    }
     if (close === 'ask') {
       report(copy.otherJob(probe?.foregroundProcess ?? agentName))
       return
@@ -97,6 +108,12 @@ export async function continueMobileTerminalInChat(
     // Armed before anything closes, so a later tab pick by the user supersedes this one.
     scope.pendingSelectionRef.current = launchedSelection(lock, {}, null)
     if (closes) {
+      // The preflight took a round trip, so the pane may now run something else; only its agent is
+      // the user's to stop.
+      if ((await probeClose()).close !== 'close') {
+        report(copy.terminalChanged())
+        return
+      }
       // Asked before the close so the host is already watching when the pane goes.
       const exited = terminalExitWait
         .request(
@@ -177,6 +194,11 @@ async function admittedChatAgent(
       report(copy.failed(refusalWords(refusal.refusal, ''), false))
       return null
     }
+    // No answer at all (a dropped link) says nothing about the agent.
+    if (!refusal.refusal && !refusal.reason) {
+      report(copy.failed(copy.tryAgain(), false))
+      return null
+    }
   }
   report(copy.unavailable(TUI_AGENT_DISPLAY_NAMES[source.agent]))
   return null
@@ -207,6 +229,16 @@ const copy = {
       'session.terminalChatContinuation.unavailable',
       "{{agent}} chats aren't available on this computer.",
       { agent }
+    ),
+  uncheckable: () =>
+    translate(
+      'session.terminalChatContinuation.uncheckable',
+      "Orca couldn't check what's running in this terminal. Try again."
+    ),
+  terminalChanged: () =>
+    translate(
+      'session.terminalChatContinuation.terminalChanged',
+      'This terminal changed while Orca checked it. Try again.'
     ),
   tryAgain: () => translate('session.terminalChatContinuation.tryAgain', 'Try again.'),
   failed: (detail: string, terminalClosed: boolean) =>

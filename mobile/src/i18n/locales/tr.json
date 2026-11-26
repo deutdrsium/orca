@@ -4020,8 +4020,10 @@
       "failed": "Sohbette devam edilemedi. {{detail}}",
       "failedAfterClose": "Sohbette devam edilemedi. {{detail}} Konuşma Ajan Geçmişi'nde.",
       "otherJob": "Bu terminalde {{process}} çalışıyor. Kapatın, ardından sohbette devam edin.",
+      "terminalChanged": "Orca kontrol ederken bu terminal değişti. Tekrar deneyin.",
       "tryAgain": "Tekrar deneyin.",
       "unavailable": "{{agent}} sohbetleri bu bilgisayarda kullanılamıyor.",
+      "uncheckable": "Orca bu terminalde neyin çalıştığını kontrol edemedi. Tekrar deneyin.",
       "unconfirmed": "Orca sohbetin açıldığını doğrulayamadı. Tekrar denemeden önce sekmelerinizi kontrol edin."
     }
   },

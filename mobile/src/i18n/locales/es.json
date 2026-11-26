@@ -3096,8 +3096,10 @@
       "failed": "No se pudo continuar en el chat. {{detail}}",
       "failedAfterClose": "No se pudo continuar en el chat. {{detail}} La conversación está en el historial de agentes.",
       "otherJob": "{{process}} se está ejecutando en esta terminal. Ciérralo y luego continúa en el chat.",
+      "terminalChanged": "Esta terminal cambió mientras Orca la comprobaba. Vuelve a intentarlo.",
       "tryAgain": "Vuelve a intentarlo.",
       "unavailable": "Los chats de {{agent}} no están disponibles en este equipo.",
+      "uncheckable": "Orca no pudo comprobar qué se está ejecutando en esta terminal. Vuelve a intentarlo.",
       "unconfirmed": "Orca no pudo confirmar que el chat se abrió. Revisa tus pestañas antes de volver a intentarlo."
     }
   },
