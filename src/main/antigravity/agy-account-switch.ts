@@ -73,14 +73,14 @@ export class AgyAccountSwitch {
     return this.switching && this.rows ? this.withProgress(this.rows) : null
   }
 
-  /** The switch under way, or why the last one that answered early didn't happen (until agy
-   *  holds that account after all). */
+  /** The switch under way, or why the last one that answered early didn't happen (until that
+   *  account is selected after all; agy can hold it without the switch having happened). */
   withProgress(state: AntigravityAccountState): AntigravityAccountState {
     const { switching: _switching, switchFailed: _failed, ...rows } = state
     if (this.switching) {
       return { ...rows, switching: { ...this.switching } }
     }
-    return this.failed && this.failed.accountId !== rows.activeAccountId
+    return this.failed && this.failed.accountId !== rows.selectedAccountId
       ? { ...rows, switchFailed: { ...this.failed } }
       : rows
   }

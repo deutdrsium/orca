@@ -272,3 +272,16 @@ it('moves chats off the selected account when agy already holds the one picked',
   // Chats that start again record the new selection.
   expect(rig.login.atLaunch()).toBe('1')
 })
+
+it('still reports a failed switch when agy already held that account but another was selected', async () => {
+  const rig = await switchRig({ waitMs: 40 })
+  // Some agy wrote b back over the selected a.
+  rig.h.setNative(credential('b'))
+  expect((await rig.select()).switching?.accountId).toBe(rig.b)
+
+  const rows = await rig.h.service.listAccounts()
+  expect(rows.activeAccountId).toBe(rig.b)
+  await vi.waitFor(() =>
+    expect(rig.accountSwitch.withProgress(rows).switchFailed?.accountId).toBe(rig.b)
+  )
+})
