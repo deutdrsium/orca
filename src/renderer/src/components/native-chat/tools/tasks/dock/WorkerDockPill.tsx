@@ -215,8 +215,9 @@ export function useWorkerDockJumpLift({
       const over = box.top < rowTop - 1
       const above = Math.max(0, rowTop - box.bottom)
       pane.style.setProperty(CHIP_ROOM, `${over ? above + folded : 0}px`)
-      // Jump keeps its 12px rest above the chip, and 8px above the open panel.
-      pane.style.setProperty(JUMP_LIFT, `${above + full + (list ? 8 : 12)}px`)
+      // Jump keeps its 12px rest above the chip, and 8px above the open panel; a chip that is a
+      // row of its own lifts nothing.
+      pane.style.setProperty(JUMP_LIFT, `${over ? above + full + (list ? 8 : 12) : 0}px`)
     }
     const heights = new Map<Element, number>()
     const observer = new ResizeObserver((entries) => {

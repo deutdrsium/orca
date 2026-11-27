@@ -48,10 +48,11 @@ export function useWorkerDockCardBudget({
       return () => pane.removeAttribute(CRAMPED)
     }
     const observer = new ResizeObserver(measure)
-    // The card rides the transcript's end, which rises as the dock (a growing message box) or the
-    // docked task list under the chip's row grows.
-    const below = root.current?.parentElement?.nextElementSibling
-    for (const element of [pane, pane.querySelector('[data-native-chat-dock]'), below]) {
+    // The card rides the transcript's end, which rises as anything under it grows (the message box,
+    // a docked task list that mounts or opens): the transcript viewport just before the chip's row
+    // shrinks for all of them.
+    const viewport = root.current?.parentElement?.previousElementSibling
+    for (const element of [pane, viewport]) {
       if (element) {
         observer.observe(element)
       }

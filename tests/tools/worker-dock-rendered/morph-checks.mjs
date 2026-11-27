@@ -206,6 +206,22 @@ export async function runMorphChecks({ check, scene, assert }) {
     })
   )
 
+  await check('a press there dragged away leaves nothing behind: Enter still toggles', () =>
+    scene('twentyFolded720', {}, async (page) => {
+      await rest(page)
+      const spot = await chip(page).boundingBox()
+      await page.waitForTimeout(400)
+      await page.mouse.move(spot.x + spot.width / 2, spot.y + spot.height / 2)
+      await page.mouse.down()
+      await page.mouse.move(4, 4)
+      await page.mouse.up()
+      await toggle(page).focus()
+      await page.keyboard.press('Enter')
+      await page.waitForTimeout(100)
+      assert(!(await expanded(page)), 'Enter did not fold it after a dragged-away press')
+    })
+  )
+
   await check('Enter toggles a chip the pointer opened; a click pins it', () =>
     scene('twentyFolded720', {}, async (page) => {
       await rest(page)

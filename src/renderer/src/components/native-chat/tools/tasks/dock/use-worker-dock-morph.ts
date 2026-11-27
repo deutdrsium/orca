@@ -213,6 +213,7 @@ export function useWorkerDockHover({
         !expanded ||
         !byHover.current ||
         !pointer(event) ||
+        event.button !== 0 ||
         !at ||
         event.clientX < at.left ||
         event.clientX > at.right ||
@@ -227,10 +228,16 @@ export function useWorkerDockHover({
       byHover.current = false
       swallow.current = true
     },
-    /** Drops the click that follows a press `pressCapture` used. */
-    clickCapture(event: { preventDefault: () => void; stopPropagation: () => void }) {
-      if (swallow.current) {
-        swallow.current = false
+    /** Drops the click that follows a press `pressCapture` used; a key's click (`detail` 0) is
+     *  never that one, and clears a press that ended without a click (dragged away). */
+    clickCapture(event: {
+      detail: number
+      preventDefault: () => void
+      stopPropagation: () => void
+    }) {
+      const swallowed = swallow.current && event.detail > 0
+      swallow.current = false
+      if (swallowed) {
         event.preventDefault()
         event.stopPropagation()
       }
