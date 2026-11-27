@@ -185,6 +185,28 @@ const PEEK_LABELS = {
   issue: (number: number) => `#${number}`
 }
 
+// Why: focus stays on the trigger (blur closes the peek), so its keys scroll the portaled list.
+function scrollPeekList(list: HTMLUListElement | null, event: React.KeyboardEvent): void {
+  if (!list || list.scrollHeight <= list.clientHeight) {
+    return
+  }
+  const row = list.firstElementChild?.clientHeight ?? 0
+  const top: Record<string, number> = {
+    ArrowDown: list.scrollTop + row,
+    ArrowUp: list.scrollTop - row,
+    PageDown: list.scrollTop + list.clientHeight,
+    PageUp: list.scrollTop - list.clientHeight,
+    Home: 0,
+    End: list.scrollHeight
+  }
+  if (!(event.key in top)) {
+    return
+  }
+  event.preventDefault()
+  event.stopPropagation()
+  list.scrollTo({ top: top[event.key] })
+}
+
 export function WorktreeReferenceStack({
   items,
   details = EMPTY_DETAILS
@@ -193,6 +215,7 @@ export function WorktreeReferenceStack({
   details?: WorkspaceReferenceDetailsMap
 }): React.JSX.Element | null {
   const t = useTranslate()
+  const listRef = React.useRef<HTMLUListElement>(null)
   const ordered = [...items].sort((a, b) => priority(a, details) - priority(b, details))
   const front = ordered[0]
   if (!front) {
@@ -238,6 +261,7 @@ export function WorktreeReferenceStack({
           data-workspace-reference-stack={kind}
           // Why: the peek replaces the card's details hover while the pointer or focus is here.
           data-activity-thread-control=""
+          onKeyDown={(event) => scrollPeekList(listRef.current, event)}
         >
           <span className="workspace-reference-stack-front" data-reference-front="" aria-hidden>
             <ReferenceGlyph item={front} details={details} />
@@ -261,7 +285,10 @@ export function WorktreeReferenceStack({
         className="w-auto max-w-[min(18rem,var(--radix-tooltip-content-available-width))]"
       >
         {/* Why: content padding and border sit outside the list, so it scrolls within the space left. */}
-        <ul className="flex max-h-[calc(var(--radix-tooltip-content-available-height)-1.625rem)] flex-col overflow-y-auto scrollbar-sleek">
+        <ul
+          ref={listRef}
+          className="flex max-h-[calc(var(--radix-tooltip-content-available-height)-1.625rem)] flex-col overflow-y-auto scrollbar-sleek"
+        >
           {ordered.map((item) => (
             <ReferencePeekRow key={getWorkspaceAttachmentKey(item)} item={item} details={details} />
           ))}
