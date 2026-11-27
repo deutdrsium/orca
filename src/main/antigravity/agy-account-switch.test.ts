@@ -285,3 +285,17 @@ it('still reports a failed switch when agy already held that account but another
     expect(rig.accountSwitch.withProgress(rows).switchFailed?.accountId).toBe(rig.b)
   )
 })
+
+it('still reports a failed switch to the selected account while agy holds another', async () => {
+  const rig = await switchRig({ waitMs: 40 })
+  // b is selected, but some agy wrote a back over it.
+  await rig.h.service.selectAccount(rig.b)
+  rig.h.setNative(credential('a'))
+  expect((await rig.select()).switching?.accountId).toBe(rig.b)
+
+  const rows = await rig.h.service.listAccounts()
+  expect(rows.selectedAccountId).toBe(rig.b)
+  await vi.waitFor(() =>
+    expect(rig.accountSwitch.withProgress(rows).switchFailed?.accountId).toBe(rig.b)
+  )
+})

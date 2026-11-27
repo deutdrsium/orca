@@ -73,16 +73,17 @@ export class AgyAccountSwitch {
     return this.switching && this.rows ? this.withProgress(this.rows) : null
   }
 
-  /** The switch under way, or why the last one that answered early didn't happen (until that
-   *  account is selected after all; agy can hold it without the switch having happened). */
+  /** The switch under way, or why the last one that answered early didn't happen, until that
+   *  account is both selected and held by agy: either alone can predate the failed switch. */
   withProgress(state: AntigravityAccountState): AntigravityAccountState {
     const { switching: _switching, switchFailed: _failed, ...rows } = state
     if (this.switching) {
       return { ...rows, switching: { ...this.switching } }
     }
-    return this.failed && this.failed.accountId !== rows.selectedAccountId
-      ? { ...rows, switchFailed: { ...this.failed } }
-      : rows
+    const settled =
+      this.failed?.accountId === rows.selectedAccountId &&
+      this.failed?.accountId === rows.activeAccountId
+    return this.failed && !settled ? { ...rows, switchFailed: { ...this.failed } } : rows
   }
 
   /** `moved` runs, before any chat starts again, once agy holds the selected login. Answers with
