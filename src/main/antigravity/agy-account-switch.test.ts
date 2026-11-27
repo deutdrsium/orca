@@ -258,3 +258,17 @@ it("moves chats to the new login even when the check after agy's write fails", a
   await expect(rig.accountSwitch.select(rig.h.service, rig.b, moved)).rejects.toThrow()
   expect(moved).toHaveBeenCalledTimes(1)
 })
+
+it('moves chats off the selected account when agy already holds the one picked', async () => {
+  const rig = await switchRig()
+  const a = (await rig.h.service.listAccounts()).activeAccountId!
+  await rig.h.service.selectAccount(a)
+  // Another agy wrote b's login back; chats still launch on the selected a.
+  rig.h.setNative(credential('b'))
+  rig.chat.busy = false
+  await rig.select()
+  await vi.waitFor(() => expect(rig.order).toEqual(['agy exited']))
+  expect((await rig.h.service.listAccounts()).selectedAccountId).toBe(rig.b)
+  // Chats that start again record the new selection.
+  expect(rig.login.atLaunch()).toBe('1')
+})

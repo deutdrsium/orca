@@ -102,26 +102,31 @@ export class AgyAccountSwitch {
         )
       }
     }
-    const apply = async () => {
+    // `selection`: chats launch on the selected account, so a new selection moves them even when
+    // agy already holds that login.
+    const apply = async (selection: boolean) => {
       let switched = false
+      let selected = false
       try {
-        return await service.selectAccount(accountId, () => (switched = true), unchanged)
+        const state = await service.selectAccount(accountId, () => (switched = true), unchanged)
+        selected = true
+        return state
       } finally {
         // Once agy holds another login, chats and caches move even if a later check failed.
-        if (switched) {
+        if (switched || (selection && selected)) {
           moved()
         }
       }
     }
-    const active = (await service.listAccounts()).activeAccountId
+    const before = await service.listAccounts()
     this.assertNotSwitching()
     if (signingIn()) {
       throw new Error('Antigravity is signing in. Select an account after it finishes.')
     }
     this.failed = null
-    // agy already holds it: no login changes, so no chat needs to stop.
-    if (active === accountId) {
-      return apply()
+    // Selected and held already: no login or selection changes, so no chat needs to stop.
+    if (before.activeAccountId === accountId && before.selectedAccountId === accountId) {
+      return apply(false)
     }
     const progress = { accountId, waitingForChats: 0 }
     this.switching = progress
@@ -129,13 +134,16 @@ export class AgyAccountSwitch {
     let answered = false
     let marker: ReturnType<AgyLoginRevision['beginSwitch']> | null = null
     const done = this.deps.gate
-      .runAfterChats(async (running) => {
-        marker = this.deps.login.beginSwitch()
-        await this.drain(running, marker.committed, (count) => {
-          progress.waitingForChats = count
-          this.deps.publish?.({ ...progress })
-        })
-      }, apply)
+      .runAfterChats(
+        async (running) => {
+          marker = this.deps.login.beginSwitch()
+          await this.drain(running, marker.committed, (count) => {
+            progress.waitingForChats = count
+            this.deps.publish?.({ ...progress })
+          })
+        },
+        () => apply(true)
+      )
       .catch((error: unknown) => {
         if (answered) {
           this.failed = {

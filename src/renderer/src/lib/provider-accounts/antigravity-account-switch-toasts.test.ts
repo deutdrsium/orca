@@ -9,7 +9,9 @@ const host = vi.hoisted(() => {
   const pushed: {
     accountSwitch: AntigravityAccountSwitchProgress | null
     rows: AntigravityAccountState[]
-  } = { accountSwitch: null, rows: [] }
+    /** Reads that answer when the test says, ahead of `rows`. */
+    reads: Promise<AntigravityAccountState>[]
+  } = { accountSwitch: null, rows: [], reads: [] }
   return Object.assign(pushed, {
     listeners: new Set<() => void>(),
     success: vi.fn(),
@@ -26,7 +28,7 @@ vi.mock('@/runtime/provider-accounts/sign-in/antigravity-chat-sign-in-status', (
   }
 }))
 vi.mock('@/runtime/provider-accounts/sign-in/runtime-antigravity-accounts-client', () => ({
-  callAntigravityAccounts: async () => host.rows.shift()
+  callAntigravityAccounts: async () => host.reads.shift() ?? host.rows.shift()
 }))
 
 const { followAntigravityAccountSwitch } = await import('./antigravity-account-switch-toasts')
@@ -80,4 +82,18 @@ it('names why a waiting switch failed', async () => {
   expect(host.error).toHaveBeenCalledWith('Antigravity account update failed.', {
     description: '1 chat is still running.'
   })
+})
+
+it('reads again when the switch ends while a read of it is still out', async () => {
+  host.success.mockClear()
+  // The push lags the select's answer, so the first read goes out at once and answers late.
+  push(null)
+  const late = Promise.withResolvers<AntigravityAccountState>()
+  host.reads.push(late.promise)
+  followAntigravityAccountSwitch({ kind: 'local' }, { runtime: 'host' }, 'b')
+  // The switch ends while that read is out; the late answer still shows it waiting.
+  host.rows.push(rows({ activeAccountId: 'b', selectedAccountId: 'b' }))
+  push(null)
+  late.resolve(rows({ switching: { accountId: 'b', waitingForChats: 1 } }))
+  await vi.waitFor(() => expect(host.success).toHaveBeenCalledWith('Switched to b@example.com'))
 })

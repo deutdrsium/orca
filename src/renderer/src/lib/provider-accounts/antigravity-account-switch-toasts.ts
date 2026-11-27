@@ -33,6 +33,8 @@ export function followAntigravityAccountSwitch(
   following.add(key)
   const release = observeAntigravityChatSignIn(owner)
   let reading = false
+  // A push that lands during a read is checked again once it answers.
+  let recheck = false
   let unsubscribe = (): void => {}
   const stop = (): void => {
     clearTimeout(limit)
@@ -43,8 +45,12 @@ export function followAntigravityAccountSwitch(
   const limit = setTimeout(stop, FOLLOW_LIMIT_MS)
   // The push can lag the select's answer, so the rows have the last word on whether it ended.
   const check = (): void => {
+    if (reading) {
+      recheck = true
+      return
+    }
     const view = readAntigravityChatSignIn(owner)
-    if (reading || view.status !== 'known' || view.accountSwitch?.accountId === accountId) {
+    if (view.status !== 'known' || view.accountSwitch?.accountId === accountId) {
       return
     }
     reading = true
@@ -52,36 +58,35 @@ export function followAntigravityAccountSwitch(
       (rows) => {
         reading = false
         if (rows.switching?.accountId === accountId) {
+          if (recheck) {
+            recheck = false
+            check()
+          }
           return
         }
         stop()
-        if (rows.activeAccountId === accountId) {
+        if (rows.switchFailed?.accountId === accountId) {
+          toast.error(
+            translate(
+              'accounts.antigravity.switchFailedToast',
+              'Antigravity account update failed.'
+            ),
+            { description: rows.switchFailed.message }
+          )
+        } else if (rows.selectedAccountId === accountId) {
+          // Selected is what new chats launch on, even if another agy has since written its login.
           const account = rows.accounts.find((entry) => entry.id === accountId)
           toast.success(
             translate('accounts.antigravity.switched', 'Switched to {{account}}', {
               account: account?.email ?? account?.subject ?? accountId
             })
           )
-        } else if (!rows.switching) {
-          // Another select replaced this one only while it still runs; that one says how it ends.
-          announceFailure(
-            rows.switchFailed?.accountId === accountId ? rows.switchFailed.message : undefined
-          )
         }
       },
-      () => {
-        stop()
-        announceFailure(undefined)
-      }
+      // Unreadable rows say nothing about how it ended.
+      stop
     )
   }
   unsubscribe = subscribeAntigravityChatSignIns(check)
   check()
-}
-
-function announceFailure(reason: string | undefined): void {
-  toast.error(
-    translate('accounts.antigravity.switchFailedToast', 'Antigravity account update failed.'),
-    reason ? { description: reason } : undefined
-  )
 }
