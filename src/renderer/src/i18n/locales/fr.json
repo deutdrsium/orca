@@ -1614,8 +1614,7 @@
         "blocked": "Bloqué"
       },
       "action": {
-        "install": "Installer",
-        "installNow": "Installer {{version}} maintenant"
+        "checkHeldNow": "Rechercher {{version}} maintenant. Votre réglage de délai reste inchangé."
       }
     }
   },
