@@ -178,7 +178,7 @@ export async function runLoadingAndLayerChecks({ check, scene, assert, shot }) {
         await page.waitForTimeout(200)
         const [b, p] = await Promise.all([jump.boundingBox(), chip(page).boundingBox()])
         const rest = p.y - (b.y + b.height)
-        assert(Math.abs(rest - 20) <= 1, `Jump settled ${rest}px above the chip, not 20px`)
+        assert(Math.abs(rest - 12) <= 1, `Jump settled ${rest}px above the chip, not 12px`)
         await jump.click()
         await page.waitForTimeout(200)
         const atEnd = await page.evaluate(() => {

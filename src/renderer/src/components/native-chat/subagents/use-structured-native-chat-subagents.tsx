@@ -79,8 +79,21 @@ export function useStructuredNativeChatSubagents({
         {card}
       </NativeChatSubagentSheetPromptSlot>
     ),
+    /** The worker chip, for the transcript's end. */
+    chip: isVisible ? (
+      <NativeChatStructuredDock
+        part="chip"
+        hasWork={hasWork}
+        strip={strip}
+        target={target}
+        party={party}
+        isVisible={isVisible}
+      />
+    ) : null,
+    /** Workers' open prompts, for the dock above the composer. */
     dock: isVisible ? (
       <NativeChatStructuredDock
+        part="approvals"
         hasWork={hasWork}
         strip={strip}
         target={target}

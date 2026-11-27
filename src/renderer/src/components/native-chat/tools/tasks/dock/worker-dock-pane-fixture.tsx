@@ -11,6 +11,7 @@ import {
 } from '../../../appearance/native-chat-appearance-style'
 import { NativeChatJumpToLatest } from '../../../viewport/scroll/NativeChatJumpToLatest'
 import { NativeChatWorkerDockFrame } from './NativeChatWorkerDockFrame'
+import { NativeChatTaskList } from '../NativeChatTaskList'
 
 // Dev-only: the chat pane the worker dock fixtures render their strip in.
 /** The strip in a full-height chat pane above a message box, as a chat shows it. */
@@ -46,6 +47,14 @@ const queue = (count: number): StructuredAgentSessionQueuedMessagesController =>
   steerHead: undefined,
   isWorking: true
 })
+
+const FIXTURE_TASKS = {
+  tasks: [
+    { content: 'Move the worker chip above the task list', status: 'completed' as const },
+    { content: 'Let the transcript run under the chip', status: 'in_progress' as const },
+    { content: 'Check every width and theme', status: 'pending' as const }
+  ]
+}
 
 // The chat's own transcript end padding and Jump to latest, so the pill's clearance is real.
 function FixtureTranscript({ overlay }: { overlay?: React.ReactNode }) {
@@ -109,6 +118,8 @@ export function workerDockFixturePane(
     promptReplacesComposer?: boolean
     /** The real message box in place of the stand-in. */
     composer?: React.ReactNode
+    /** A docked task list under the chip's row, as a chat with a plan shows it. */
+    tasks?: boolean
   } = {}
 ) {
   const prompt = sections === 'question' || sections === 'both'
@@ -118,10 +129,20 @@ export function workerDockFixturePane(
       className="native-chat-appearance flex h-[calc(100vh-2rem)] flex-col bg-chat-canvas"
       style={nativeChatAppearanceStyle({})}
     >
-      <FixtureTranscript overlay={more.find} />
+      {/* As a chat's message list: the transcript, the chip's row at its end, then the task list. */}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <FixtureTranscript overlay={more.find} />
+        <NativeChatWorkerDockFrame overlay>{strip}</NativeChatWorkerDockFrame>
+        {more.tasks ? (
+          <div className="shrink-0 px-3 pb-2 sm:px-4 [[data-native-chat-worker-dock]:has([data-native-chat-background-tasks])+&]:pt-2">
+            <div className="mx-auto w-full max-w-(--chat-content-max-width)">
+              <NativeChatTaskList list={FIXTURE_TASKS} presentation="composer" />
+            </div>
+          </div>
+        ) : null}
+      </div>
       <Toaster />
       <NativeChatDock>
-        <NativeChatWorkerDockFrame>{strip}</NativeChatWorkerDockFrame>
         {prompt ? null : more.goal}
         {prompt ? (
           <NativeChatQuestionCard

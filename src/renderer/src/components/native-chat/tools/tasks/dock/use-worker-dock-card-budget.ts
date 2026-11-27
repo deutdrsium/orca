@@ -8,8 +8,8 @@ const JUMP_ROOM = 40
 const CRAMPED = 'data-worker-dock-cramped'
 
 /** The panel list's max height: six rows, or fewer when the chat above the dock is shorter, so the
- *  panel and the Jump to latest above it never run off the pane. Re-read when the pane or the dock
- *  under the panel (a growing message box lifts it) resizes; the panel's own growth (every frame
+ *  panel and the Jump to latest above it never run off the pane. Re-read when the pane, the dock or the
+ *  task list under the panel (either lifts it as it grows) resizes; the panel's own growth (every frame
  *  of the morph) moves nothing this reads. */
 export function useWorkerDockCardBudget({
   root,
@@ -54,7 +54,10 @@ export function useWorkerDockCardBudget({
       return () => pane.removeAttribute(CRAMPED)
     }
     const observer = new ResizeObserver(measure)
-    for (const element of [pane, root.current?.closest('[data-native-chat-dock]')]) {
+    // The card rides the transcript's end, which rises as the dock (a growing message box) or the
+    // docked task list under the chip's row grows.
+    const below = root.current?.parentElement?.nextElementSibling
+    for (const element of [pane, pane.querySelector('[data-native-chat-dock]'), below]) {
       if (element) {
         observer.observe(element)
       }

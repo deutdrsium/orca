@@ -165,7 +165,7 @@ export function WorkerDockRoster(props: {
     }
   })
   useWorkerDockOutsidePress(root, props.expanded, () => close(false))
-  useWorkerDockJumpLift(card, content, morph.mounted)
+  useWorkerDockJumpLift({ root, card, content, shown, open: morph.mounted })
   const top = sorted[0]
   const topRow = top ? props.rows.get(top.id) : undefined
   // The pill names a worker the host has not sent yet; ask for the window around it.
@@ -278,7 +278,7 @@ export function WorkerDockRoster(props: {
         data-worker-dock-entering={morph.entering ? '' : undefined}
         className={cn(
           WORKER_DOCK_SURFACE_CLASS,
-          'absolute bottom-0 left-1/2 flex max-w-full -translate-x-1/2 flex-col overflow-hidden [[data-native-chat-dock-fit~=dock]_&]:translate-x-0',
+          'absolute bottom-0 left-1/2 z-20 flex max-w-full -translate-x-1/2 flex-col overflow-hidden [[data-native-chat-dock-fit~=transcript]_&]:translate-x-0 [[data-native-chat-dock-fit~=transcript]_&]:self-center',
           'rounded-xl',
           props.expanded ? 'shadow-floating' : 'shadow-sm'
         )}

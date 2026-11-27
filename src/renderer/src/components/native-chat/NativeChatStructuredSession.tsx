@@ -325,8 +325,8 @@ export function NativeChatStructuredSession(props: Omit<NativeChatStructuredView
                                 structuredAttachments
                                 runtimeContext={imageRuntimeContext}
                                 deliveryNotices={deliveryNotices}
-                                {...{ turnBot, botHome: bot.kickoff }}
-                                timedRows={timedRows}
+                                {...{ turnBot, botHome: bot.kickoff, timedRows }}
+                                workerChip={subagents.chip}
                               />
                             )}
                           </NativeChatWorkerApprovalTimeline>

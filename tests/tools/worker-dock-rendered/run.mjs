@@ -523,10 +523,21 @@ await check('Jump to latest rests in the transcript, clear above the chip row', 
     await jump.waitFor()
     const [a, b] = await Promise.all([jump.boundingBox(), chip(page).boundingBox()])
     const gap = b.y - (a.y + a.height)
-    // Jump keeps its 12px rest in the transcript; the chip's row starts 8px below that.
-    assert(Math.abs(gap - 20) <= 1, `Jump to latest sits ${gap}px above the chip`)
+    // Jump keeps its 12px rest, above the chip that sits on the transcript's end.
+    assert(Math.abs(gap - 12) <= 1, `Jump to latest sits ${gap}px above the chip`)
+    // The transcript runs on behind the chip to the stack's top edge: no band beside the chip cuts
+    // it off; the chip sits on its end.
     const transcript = await page.locator('[data-fixture-transcript]').boundingBox()
-    assert(b.y >= transcript.y + transcript.height, 'the chip is drawn over the transcript')
+    const end = transcript.y + transcript.height
+    assert(
+      Math.abs(b.y + b.height - end) <= 1,
+      `the chip ends ${end - b.y - b.height}px from the transcript's end`
+    )
+    const below = await page.evaluate(() => {
+      const dock = document.querySelector('[data-native-chat-dock]').getBoundingClientRect()
+      return dock.top
+    })
+    assert(Math.abs(below - end) <= 1, `the transcript stops ${below - end}px above the dock`)
     await shot(page, 'jump-stacked')
   })
 )
