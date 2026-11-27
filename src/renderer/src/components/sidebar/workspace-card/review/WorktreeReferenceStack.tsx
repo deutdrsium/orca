@@ -107,9 +107,6 @@ function priority(item: WorkspaceAttachment, details: WorkspaceReferenceDetailsM
           : 4
 }
 
-// One reference per peek row; past this the list folds into "+N more".
-const PEEK_ROW_LIMIT = 8
-
 function openReviewStatus(review: WorktreeCardPrDisplay, t: Translate): string {
   switch (getProviderChecksOutcome(review.checksSummary, review.status)) {
     case 'failure':
@@ -226,9 +223,9 @@ export function WorktreeReferenceStack({
         .join(' · ')
     })
     .join(', ')
-  const hidden = ordered.length - PEEK_ROW_LIMIT
   return (
-    <Tooltip delayDuration={200}>
+    // Why: hoverable so a list taller than the window can be scrolled.
+    <Tooltip delayDuration={200} disableHoverableContent={false}>
       <TooltipTrigger asChild>
         <span
           role="img"
@@ -255,22 +252,20 @@ export function WorktreeReferenceStack({
         </span>
       </TooltipTrigger>
       <TooltipContent
-        variant="tab-preview"
+        variant="tab-preview-interactive"
         side="right"
         sideOffset={8}
+        collisionPadding={8}
         showArrow={false}
-        className="w-auto max-w-72 min-w-44"
+        // Why: a narrow window must shrink the peek (titles truncate) rather than push it off-screen.
+        className="w-auto max-w-[min(18rem,var(--radix-tooltip-content-available-width))]"
       >
-        <ul className="flex flex-col">
-          {ordered.slice(0, PEEK_ROW_LIMIT).map((item) => (
+        {/* Why: content padding and border sit outside the list, so it scrolls within the space left. */}
+        <ul className="flex max-h-[calc(var(--radix-tooltip-content-available-height)-1.625rem)] flex-col overflow-y-auto scrollbar-sleek">
+          {ordered.map((item) => (
             <ReferencePeekRow key={getWorkspaceAttachmentKey(item)} item={item} details={details} />
           ))}
         </ul>
-        {hidden > 0 ? (
-          <div className="py-0.5 text-muted-foreground">
-            {t('workspace.links.peek.more', '+{{count}} more', { count: hidden })}
-          </div>
-        ) : null}
       </TooltipContent>
     </Tooltip>
   )

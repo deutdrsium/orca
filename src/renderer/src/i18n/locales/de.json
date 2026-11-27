@@ -25623,8 +25623,7 @@
         "failing": "fehlschlagend",
         "running": "ausstehend",
         "cancelled": "abgebrochen",
-        "passing": "erfolgreich",
-        "more": "+{{count}} weitere"
+        "passing": "erfolgreich"
       }
     },
     "attachments": {

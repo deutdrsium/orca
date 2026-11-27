@@ -25150,8 +25150,7 @@
         "failing": "en échec",
         "running": "en attente",
         "cancelled": "annulés",
-        "passing": "réussis",
-        "more": "+{{count}} de plus"
+        "passing": "réussis"
       }
     },
     "attachments": {
