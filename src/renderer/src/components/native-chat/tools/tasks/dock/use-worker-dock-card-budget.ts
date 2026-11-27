@@ -1,4 +1,5 @@
 import { useLayoutEffect, useState, type RefObject } from 'react'
+import { WORKER_DOCK_HEADER_ROW } from './WorkerDockPill'
 
 // A row's resting height: one line of title and age.
 export const WORKER_DOCK_ROW = 32
@@ -13,19 +14,14 @@ const CRAMPED = 'data-worker-dock-cramped'
  *  of the morph) moves nothing this reads. */
 export function useWorkerDockCardBudget({
   root,
-  pill,
   card,
   open,
-  rows,
-  actions
+  rows
 }: {
   root: RefObject<HTMLElement | null>
-  pill: RefObject<HTMLElement | null>
   card: RefObject<HTMLElement | null>
   open: boolean
   rows: number
-  /** Whether the bulk-action row above the rows is drawn; it takes room from the list. */
-  actions: boolean
 }): number {
   const [budget, setBudget] = useState(WORKER_DOCK_ROW * MAX_ROWS)
   useLayoutEffect(() => {
@@ -36,14 +32,12 @@ export function useWorkerDockCardBudget({
     const measure = () => {
       const paneTop = pane.getBoundingClientRect().top
       const bottom = card.current?.getBoundingClientRect().bottom
-      const header = pill.current?.offsetHeight ?? 0
       if (bottom === undefined) {
         return
       }
-      const actions = card.current?.querySelector<HTMLElement>('[data-worker-dock-actions]')
-      // Besides the list: the chip row, the bulk actions above the rows, the list's top padding and
-      // the borders, then Jump to latest's room and 8px of air.
-      const room = bottom - paneTop - header - (actions?.offsetHeight ?? 0) - 7 - JUMP_ROOM - 8
+      // Besides the list: the header (bulk actions included), the list's 4px padding above and
+      // below, and the borders, then Jump to latest's room and 8px of air.
+      const room = bottom - paneTop - WORKER_DOCK_HEADER_ROW - 10 - JUMP_ROOM - 8
       setBudget(Math.max(WORKER_DOCK_ROW, Math.min(WORKER_DOCK_ROW * MAX_ROWS, room)))
       // Too short for one row and Jump to latest even without the air: Jump steps aside while the card is open
       // (hidden, so nothing half off the pane can be pressed) and returns when it folds.
@@ -66,6 +60,6 @@ export function useWorkerDockCardBudget({
       observer.disconnect()
       pane.removeAttribute(CRAMPED)
     }
-  }, [root, pill, card, open, rows, actions])
+  }, [root, card, open, rows])
   return budget
 }

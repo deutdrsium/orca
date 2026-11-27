@@ -1,7 +1,7 @@
 import { useTranslate } from '@/i18n/use-translate'
 import { Button } from '@/components/ui/button'
 
-/** Stop all, for a provider that can only stop everything at once: above the open list. */
+/** Stop all, for a provider that can only stop everything at once: in the open list's header. */
 function WorkerDockStopAll({ stopAll }: { stopAll?: { pending: boolean; onStop: () => void } }) {
   const t = useTranslate()
   return stopAll ? (
@@ -57,9 +57,9 @@ function WorkerDockClearFailed({
   )
 }
 
-/** The open list's bulk actions, in a slim row above the rows: Clear failed, then Stop all, each
- *  only when it applies, and no row at all when neither does. Kept off the chip's row, so a press
- *  aimed at a chip that opened under the pointer never lands on a bulk action. */
+/** The open list's bulk actions, at the right of its header: Clear failed, then Stop all, each only
+ *  when it applies. A press aimed at a chip that opened under the pointer lands where the chip was,
+ *  on the list's last rows, never up here. */
 export function WorkerDockHeadActions({
   stopAll,
   ...clear
@@ -73,7 +73,7 @@ export function WorkerDockHeadActions({
     return null
   }
   return (
-    <div data-worker-dock-actions="" className="flex items-center justify-end gap-1 pb-1">
+    <div data-worker-dock-actions="" className="flex shrink-0 items-center gap-1">
       <WorkerDockClearFailed {...clear} />
       <WorkerDockStopAll stopAll={stopAll} />
     </div>

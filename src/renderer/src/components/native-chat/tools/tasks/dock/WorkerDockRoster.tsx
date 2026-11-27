@@ -139,12 +139,10 @@ export function WorkerDockRoster(props: {
   )
   const budget = useWorkerDockCardBudget({
     root,
-    pill,
     card,
     // Until the fold ends: Jump to latest stays lifted (or set aside) while the card still covers it.
     open: morph.mounted,
-    rows: items.length,
-    actions: clearable >= 2 || Boolean(props.stopAll)
+    rows: items.length
   })
   // Re-read after the list's size changes and once the rising rows land (they overflow it while they
   // rise); scrolling re-reads it from onScroll.
@@ -235,6 +233,7 @@ export function WorkerDockRoster(props: {
   })
   const hover = useWorkerDockHover({
     root,
+    card,
     expanded: props.expanded,
     onOpen: () => {
       // The list opens under the pointer, so its order holds from the start.
@@ -284,6 +283,8 @@ export function WorkerDockRoster(props: {
         )}
         onPointerEnter={hover.enter}
         onPointerLeave={hover.leave}
+        onPointerDownCapture={hover.pressCapture}
+        onClickCapture={hover.clickCapture}
         onFocusCapture={(event) => {
           // Only the open panel holds its order; the folded chip has none to keep still.
           if (props.expanded) {
@@ -315,20 +316,46 @@ export function WorkerDockRoster(props: {
           })
         }
       >
+        <WorkerDockPill
+          pill={pill}
+          glyph={
+            top ? workerDockGlyph({ ...top, retired: topRow?.retired }) : unlisted && 'running'
+          }
+          label={chipLabel}
+          latest={topRow ? workerDockRowTitle(topRow) : count}
+          total={total}
+          expanded={props.expanded}
+          listId={id}
+          action={
+            <WorkerDockHeadActions
+              clearable={clearable}
+              clearing={clearing}
+              onClearAll={() => {
+                props.onClearAll()
+                pill.current?.focus()
+              }}
+              stopAll={props.stopAll}
+            />
+          }
+          onToggle={(event) => {
+            // A press on a chip the pointer opened pins it open instead of folding it.
+            if (hover.pin(event)) {
+              return
+            }
+            // Opening under a pointer already inside the box (no pointerenter follows) holds the
+            // order at once; folding keeps it until the rows are gone.
+            if (!props.expanded) {
+              setHeld(root.current?.matches(':hover') ? sorted : null)
+            }
+            props.onExpandedChange(!props.expanded)
+          }}
+          onEnterList={() => items.length > 0 && focusRow(0)}
+        />
         <div data-worker-dock-clip="">
           {/* Folding, the rows still draw but take no focus or presses. */}
           <div inert={!props.expanded}>
             {morph.mounted ? (
-              <div ref={content} className="flex flex-col px-1 pt-1">
-                <WorkerDockHeadActions
-                  clearable={clearable}
-                  clearing={clearing}
-                  onClearAll={() => {
-                    props.onClearAll()
-                    pill.current?.focus()
-                  }}
-                  stopAll={props.stopAll}
-                />
+              <div ref={content} className="flex flex-col p-1">
                 <div
                   ref={viewport}
                   id={id}
@@ -383,36 +410,6 @@ export function WorkerDockRoster(props: {
             ) : null}
           </div>
         </div>
-        <WorkerDockPill
-          pill={pill}
-          glyph={
-            top ? workerDockGlyph({ ...top, retired: topRow?.retired }) : unlisted && 'running'
-          }
-          label={chipLabel}
-          latest={topRow ? workerDockRowTitle(topRow) : count}
-          total={total}
-          expanded={props.expanded}
-          listId={id}
-          onToggle={(event) => {
-            // A press on a chip the pointer opened pins it open instead of folding it.
-            if (hover.pin(event)) {
-              return
-            }
-            // Opening under a pointer already inside the box (no pointerenter follows) holds the
-            // order at once; folding keeps it until the rows are gone.
-            if (!props.expanded) {
-              setHeld(root.current?.matches(':hover') ? sorted : null)
-            }
-            props.onExpandedChange(!props.expanded)
-          }}
-          onKeyDown={(event) => {
-            // The list sits above the chip, so up moves into its last row.
-            if (props.expanded && items.length && event.key === 'ArrowUp') {
-              event.preventDefault()
-              focusRow(items.length - 1)
-            }
-          }}
-        />
       </div>
       <span className="sr-only" role="status" aria-live="polite">
         {count || chipLabel}

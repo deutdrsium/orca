@@ -3,7 +3,12 @@
 // several workers the name starts with the visible text and names the latest one.
 import { expanded, rows, toggle } from './fixture-session.mjs'
 
-const title = (page) => toggle(page).locator('[data-worker-dock-pill-title]').textContent()
+// The lead and the count after it are spaced with a no-break space.
+const title = async (page) =>
+  ((await toggle(page).locator('[data-worker-dock-pill-title]').textContent()) ?? '').replace(
+    /\s+/g,
+    ' '
+  )
 const firstRowTitle = (page) =>
   page.locator('[data-worker-dock-row]').first().locator('.truncate').first().textContent()
 
@@ -37,6 +42,8 @@ export async function runChipNameChecks({ check, scene, assert }) {
         assert(folded === expected, `folded chip shows "${folded}", not "${expected}"`)
         const name = await toggle(page).getAttribute('aria-label')
         assert(name?.startsWith(`${folded}, latest: `), `folded chip named "${name}"`)
+        // Once the 280ms fold has settled.
+        await page.waitForTimeout(400)
         const box = await toggle(page).boundingBox()
         assert(Math.abs(box.height - 24) <= 1, `chip is ${box.height}px tall`)
       })

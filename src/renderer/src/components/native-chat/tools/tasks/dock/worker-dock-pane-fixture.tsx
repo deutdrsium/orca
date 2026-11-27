@@ -71,7 +71,7 @@ function FixtureTranscript({ overlay }: { overlay?: React.ReactNode }) {
     return () => cancelAnimationFrame(frame)
   }, [])
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col">
+    <div className="relative flex min-h-[var(--native-chat-worker-chip-room,0px)] flex-1 flex-col">
       <div
         ref={scroller}
         data-fixture-transcript=""

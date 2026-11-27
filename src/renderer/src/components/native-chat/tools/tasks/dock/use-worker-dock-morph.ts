@@ -109,6 +109,7 @@ function jump(element: HTMLElement, width: number): void {
 /** A mouse resting on the chip opens it; leaving folds it again, unless a press pinned it open. */
 export function useWorkerDockHover({
   root,
+  card,
   expanded,
   onOpen,
   onClose,
@@ -116,6 +117,7 @@ export function useWorkerDockHover({
   onLeave
 }: {
   root: RefObject<HTMLElement | null>
+  card: RefObject<HTMLElement | null>
   expanded: boolean
   onOpen: () => void
   onClose: () => void
@@ -125,6 +127,9 @@ export function useWorkerDockHover({
 }) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const byHover = useRef(false)
+  // Where the folded chip was when the pointer opened it, and a press there to swallow.
+  const origin = useRef<DOMRect | null>(null)
+  const swallow = useRef(false)
   const cancel = () => {
     if (timer.current) {
       clearTimeout(timer.current)
@@ -134,6 +139,7 @@ export function useWorkerDockHover({
   const open = useLatestHandler(() => {
     timer.current = null
     byHover.current = true
+    origin.current = card.current?.getBoundingClientRect() ?? null
     onOpen()
   })
   const close = useLatestHandler(() => {
@@ -196,6 +202,37 @@ export function useWorkerDockHover({
       cancel()
       if (expanded && byHover.current) {
         timer.current = setTimeout(close, CLOSE_DELAY)
+      }
+    },
+    /** The list opens above where the chip was, so a press the user aimed at the chip as it opened
+     *  under the pointer lands on a row: there, it pins the list open instead of acting on the row. */
+    pressCapture(event: PointerEvent) {
+      swallow.current = false
+      const at = origin.current
+      if (
+        !expanded ||
+        !byHover.current ||
+        !pointer(event) ||
+        !at ||
+        event.clientX < at.left ||
+        event.clientX > at.right ||
+        event.clientY < at.top ||
+        event.clientY > at.bottom
+      ) {
+        return
+      }
+      event.preventDefault()
+      event.stopPropagation()
+      cancel()
+      byHover.current = false
+      swallow.current = true
+    },
+    /** Drops the click that follows a press `pressCapture` used. */
+    clickCapture(event: { preventDefault: () => void; stopPropagation: () => void }) {
+      if (swallow.current) {
+        swallow.current = false
+        event.preventDefault()
+        event.stopPropagation()
       }
     },
     /** A mouse or pen press on a chip the pointer opened pins it open; returns whether it was used

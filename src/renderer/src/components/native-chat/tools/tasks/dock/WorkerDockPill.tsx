@@ -3,6 +3,7 @@ import {
   useEffect,
   useLayoutEffect,
   type KeyboardEvent,
+  type ReactNode,
   type MouseEvent,
   type RefObject
 } from 'react'
@@ -19,6 +20,9 @@ const JUMP_LIFT = '--native-chat-worker-jump-lift'
 // gives up its floor, the chip is an ordinary row in the stack instead.
 export const WORKER_DOCK_FLOAT_CLASS =
   'pointer-events-none relative h-0 shrink-0 [[data-native-chat-dock-fit~=transcript]_&]:flex [[data-native-chat-dock-fit~=transcript]_&]:h-auto [[data-native-chat-dock-fit~=transcript]_&]:flex-col'
+/** The chip row's height folded (the chip) and open (the list's header, a row's height). */
+export const WORKER_DOCK_CHIP_ROW = 24
+export const WORKER_DOCK_HEADER_ROW = 32
 // The chip's footprint over the transcript's end: the transcript pads its end by this, so its last
 // line still clears the chip.
 const CHIP_ROOM = '--native-chat-worker-chip-room'
@@ -47,9 +51,25 @@ function WorkerDockChipDot({ glyph }: { glyph: Glyph | false }) {
   )
 }
 
-/** The worker chip ("3 running"); while the list is open above it, the same chip, still one button
- *  with its text centered where it was, is the list's bottom row, so a press aimed at the chip as it
- *  opens under the pointer lands on it. */
+/** The chip's text. Short of room (the open header beside its actions), what needs you or runs
+ *  ("2 needs you") stays whole and only the worker count after it ("· 5 workers") gives way; a
+ *  lone worker's title truncates. */
+function WorkerDockChipLabel({ label }: { label: string }) {
+  const [lead, ...rest] = label.split(' · ')
+  return (
+    <span data-worker-dock-pill-title="" className="flex min-w-0">
+      <span className={rest.length ? 'shrink-0' : 'min-w-0 truncate'}>{lead}</span>
+      {/* A no-break space: a plain one would collapse at the item's edge. */}
+      {rest.length ? (
+        <span className="min-w-0 truncate">{`\u00a0· ${rest.join(' · ')}`}</span>
+      ) : null}
+    </span>
+  )
+}
+
+/** The worker chip ("3 running"). Open, the same chip (one button, so focus stays put) heads the
+ *  list: its dot and text sit left, in line with the rows' marks and titles, and the bulk actions
+ *  sit at its right. */
 export function WorkerDockPill({
   pill,
   glyph,
@@ -58,8 +78,9 @@ export function WorkerDockPill({
   total,
   expanded,
   listId,
+  action,
   onToggle,
-  onKeyDown
+  onEnterList
 }: {
   pill: RefObject<HTMLButtonElement | null>
   glyph: Glyph | false
@@ -70,15 +91,19 @@ export function WorkerDockPill({
   total: number
   expanded: boolean
   listId: string
+  /** The open list's bulk actions, at the header's right. */
+  action: ReactNode
   onToggle: (event: MouseEvent<HTMLButtonElement>) => void
-  onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void
+  /** Moves focus into the open list's first row. */
+  onEnterList: () => void
 }) {
   const t = useTranslate()
   return (
     <div
       className={cn(
-        'flex h-6 shrink-0 items-center rounded-b-[inherit] border-t transition-colors duration-[280ms]',
-        expanded ? 'border-border' : 'border-transparent'
+        'flex shrink-0 items-center rounded-t-[inherit] border-b transition-[height,border-color] duration-[280ms] ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none',
+        // Open, as tall as a row (32px); folded, the chip's 24px.
+        expanded ? 'h-8 gap-1 border-border pr-1.5' : 'h-6 border-transparent'
       )}
     >
       <button
@@ -95,15 +120,24 @@ export function WorkerDockPill({
                 title: latest
               })
         }
-        className="flex h-full min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[inherit] px-2.5 text-xs whitespace-nowrap hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+        className={cn(
+          'flex h-full min-w-0 flex-1 items-center rounded-[inherit] text-xs whitespace-nowrap hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+          // Open, the list's 4px inset plus a row's 8px puts the dot over the rows' marks.
+          expanded ? 'justify-start gap-2 pr-2 pl-3' : 'justify-center gap-1.5 px-2.5'
+        )}
         onClick={onToggle}
-        onKeyDown={onKeyDown}
+        onKeyDown={(event: KeyboardEvent<HTMLButtonElement>) => {
+          // The open chip heads the list, so down moves into its first row.
+          if (expanded && event.key === 'ArrowDown') {
+            event.preventDefault()
+            onEnterList()
+          }
+        }}
       >
         <WorkerDockChipDot glyph={glyph} />
-        <span data-worker-dock-pill-title="" className="min-w-0 truncate">
-          {label}
-        </span>
+        <WorkerDockChipLabel label={label} />
       </button>
+      {expanded ? action : null}
     </div>
   )
 }
@@ -165,23 +199,16 @@ export function useWorkerDockJumpLift({
   useLayoutEffect(() => {
     const row = root.current
     const element = card.current
-    const chip = element?.lastElementChild
     const pane = element?.closest<HTMLElement>('[data-native-chat-root]')
-    if (
-      !shown ||
-      !row ||
-      !element ||
-      !(chip instanceof HTMLElement) ||
-      !pane ||
-      typeof ResizeObserver === 'undefined'
-    ) {
+    if (!shown || !row || !element || !pane || typeof ResizeObserver === 'undefined') {
       return
     }
     const list = open ? content.current : null
     const place = () => {
+      // The chip row's settled heights, not its animating one.
       const borders = element.offsetHeight - element.clientHeight
-      const folded = borders + chip.offsetHeight
-      const full = folded + (list?.offsetHeight ?? 0)
+      const folded = borders + WORKER_DOCK_CHIP_ROW
+      const full = list ? borders + WORKER_DOCK_HEADER_ROW + list.offsetHeight : folded
       const rowTop = row.getBoundingClientRect().top
       const box = element.getBoundingClientRect()
       // Once the transcript gives up its floor the chip is an ordinary row below it: no room to keep.
